@@ -11,6 +11,10 @@ export default {
 
     theme: {
         extend: {
+            screens: {
+                // Menu horizontal acima de 1040px; hambúrguer em 1040px ou menos
+                'nav-desktop': '1041px',
+            },
             maxWidth: {
                 '85': '85%', // Adiciona a classe max-w-85 com 85% de largura
             },
