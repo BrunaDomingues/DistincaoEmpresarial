@@ -45,20 +45,13 @@ class DashboardController extends Controller
         // Total de questionários
         $totalQuestionarios = DB::table('formularios')->count();
 
-        // Total de bairros distintos
-        $bairroIds = DB::table('formulario_perguntas')
-        ->where('pergunta', 'like', '%bairro%')
-        ->pluck('id'); // retorna um array com todos os IDs
-
-        $totalBairros = DB::table('formulario_respostas_tratadas as frt')
-                            ->join('formulario_respostas as fr', 'frt.resposta_id', '=', 'fr.id')
-                            ->join('formulario_perguntas as fp', 'fr.pergunta_id', '=', 'fp.id')
-                            ->join('formulario_envios as fe', 'fr.formulario_envio_id', '=', 'fe.id')
-                            ->where('fp.pergunta', 'Bairro')
-                            ->whereNotNull('frt.resposta_tratada')
-                            ->where('fe.invalido', false)
-                            ->distinct('frt.resposta_tratada')
-                            ->count('frt.resposta_tratada');
+        // Total de bairros distintos (geolocalização gravada em formulario_envios)
+        $totalBairros = DB::table('formulario_envios')
+            ->where('invalido', false)
+            ->whereNotNull('bairro')
+            ->whereRaw("TRIM(bairro) <> ''")
+            ->distinct()
+            ->count('bairro');
 
         // Total de usuários
         $totalUsuarios = DB::table('users')->count();
@@ -78,18 +71,15 @@ class DashboardController extends Controller
                 return $envio;
             });
 
-        // Dados agrupados por bairro (nome do bairro e quantidade de envios)
-        $dadosPorBairro = DB::table('formulario_respostas_tratadas as frt')
-                                ->join('formulario_respostas as fr', 'frt.resposta_id', '=', 'fr.id')
-                                ->join('formulario_perguntas as fp', 'fr.pergunta_id', '=', 'fp.id')
-                                ->join('formulario_envios as fe', 'fr.formulario_envio_id', '=', 'fe.id')
-                                ->where('fp.pergunta', 'Bairro') // ou use whereIn se preferir o ID
-                                ->whereNotNull('frt.resposta_tratada')
-                                ->where('fe.invalido', false)
-                                ->select('frt.resposta_tratada as bairro', DB::raw('COUNT(*) as total'))
-                                ->groupBy('frt.resposta_tratada')
-                                ->orderByDesc('total')
-                                ->get();
+        // Dados agrupados por bairro (geolocalização do envio)
+        $dadosPorBairro = DB::table('formulario_envios')
+            ->where('invalido', false)
+            ->whereNotNull('bairro')
+            ->whereRaw("TRIM(bairro) <> ''")
+            ->select(DB::raw('TRIM(bairro) as bairro'), DB::raw('COUNT(id) as total'))
+            ->groupBy(DB::raw('TRIM(bairro)'))
+            ->orderByDesc('total')
+            ->get();
 
         return view('dashboard', compact(
             'envios',

@@ -550,7 +550,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await res.json();
             const address = data.address || {};
             document.getElementById('rua').value = address.road || '';
-            document.getElementById('bairro').value = address.suburb || address.neighbourhood || '';
+            document.getElementById('bairro').value =
+                address.suburb
+                || address.neighbourhood
+                || address.quarter
+                || address.city_district
+                || address.district
+                || address.residential
+                || '';
             document.getElementById('cidade').value = address.city || address.town || address.village || '';
             document.getElementById('estado').value = address.state || '';
         } catch (e) {
