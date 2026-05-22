@@ -1,0 +1,7 @@
+// Importando o Bootstrap
+@use 'bootstrap/scss/bootstrap' as *;
+
+// Agora, o Tailwind
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
