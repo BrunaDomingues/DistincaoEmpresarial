@@ -13,21 +13,19 @@
             --gray: #adb5bd;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
+        .dashboard,
+        .dashboard * {
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: #f5f7fb;
-            color: var(--dark);
         }
 
         .dashboard {
             display: flex;
-            min-height: 100vh;
+            width: 100%;
+            max-width: 100%;
+            min-height: calc(100vh - 5rem);
+            overflow-x: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--dark);
         }
 
         /* Sidebar Styles */
@@ -83,6 +81,9 @@
         /* Main Content Styles */
         .main-content {
             flex: 1;
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
             padding: 20px;
         }
 
@@ -297,6 +298,8 @@
         .action-title {
             font-weight: 500;
             margin-bottom: 3px;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .action-time {
@@ -363,12 +366,23 @@
             color: var(--primary);
         }
 
+        .chart-scroll {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .chart-scroll canvas {
+            max-width: 100%;
+        }
+
         /* Responsive Design */
-        @media (max-width: 992px) {
+        @media (max-width: 1100px) {
             .content-grid {
                 grid-template-columns: 1fr;
             }
-            
+        }
+
+        @media (max-width: 992px) {
             .sidebar {
                 width: 80px;
             }
@@ -513,7 +527,9 @@
                         <div class="section-header">
                             <h3 class="section-title">Distribuição por Bairros</h3>
                         </div>
-                        <canvas id="graficoBairros" height="300"></canvas>
+                        <div class="chart-scroll">
+                            <canvas id="graficoBairros" height="300"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -649,6 +665,8 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'bar',
             data,
             options: {
+                responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -669,7 +687,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: { display: true, text: 'Total' }
                     },
                     x: {
-                        ticks: { autoSkip: false }
+                        ticks: {
+                            autoSkip: true,
+                            maxRotation: 45,
+                            minRotation: 0
+                        }
                     }
                 }
             },
