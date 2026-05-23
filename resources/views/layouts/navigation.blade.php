@@ -1,4 +1,45 @@
 <style>
+    .nav-links-desktop {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        margin-left: 2rem;
+        flex-wrap: wrap;
+    }
+    .nav-relatorios-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0;
+        border-bottom: 2px solid transparent;
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 1.25rem;
+        color: #6b7280;
+        background: transparent;
+        white-space: nowrap;
+    }
+    .nav-relatorios-btn:hover {
+        color: #374151;
+        border-bottom-color: #d1d5db;
+    }
+    .dark .nav-relatorios-btn {
+        color: #9ca3af;
+    }
+    .dark .nav-relatorios-btn:hover {
+        color: #d1d5db;
+        border-bottom-color: #4b5563;
+    }
+    .nav-user-desktop {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        margin-left: 1rem;
+    }
+    .nav-hamburger {
+        display: none;
+        align-items: center;
+    }
     @media (min-width: 1041px) {
         .nav-links-desktop { display: flex !important; }
         .nav-user-desktop { display: flex !important; }
@@ -15,7 +56,7 @@
     <!-- Primary Navigation Menu -->
     <div class="max-w-85 mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-20">
-            <div class="flex">
+            <div class="flex min-w-0 flex-1 items-center">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
@@ -24,7 +65,7 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="nav-links-desktop hidden space-x-8 min-[1041px]:-my-px min-[1041px]:ms-10 min-[1041px]:flex">
+                <div class="nav-links-desktop hidden min-[1041px]:flex">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
@@ -45,14 +86,11 @@
                             {{-- Dropdown de Relatórios --}}
                             <x-dropdown align="left" width="48">
                                 <x-slot name="trigger">
-                                    <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150"
-                                            style="margin-top: 1.5rem;">
+                                    <button type="button" class="nav-relatorios-btn focus:outline-none transition duration-150">
                                         Relatórios
-                                        <div class="ms-1">
-                                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
+                                        <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
                                     </button>
                                 </x-slot>
 
@@ -80,58 +118,49 @@
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
-            <div class="nav-user-desktop hidden min-[1041px]:flex min-[1041px]:items-center min-[1041px]:ms-6">
-                <div class="px-2">
-                    <button
-                        x-data="{ dark: document.documentElement.classList.contains('dark') }"
-                        @click="
-                            dark = !dark;
-                            dark
-                                ? document.documentElement.classList.add('dark')
-                                : document.documentElement.classList.remove('dark')
-                        "
-                        class="text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white transition"
-                    >
-                        <i :class="dark ? 'bx bx-sun' : 'bx bx-moon'" class="text-xl"></i>
-                    </button>
-                </div>
-                <div class="px-3">
-                    <x-dropdown align="right" width="48">
-                        <x-slot name="trigger">
-                            <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
-                                <div>{{ Auth::user()->name }}</div>
+            <!-- Menu do usuário -->
+            <div class="nav-user-desktop hidden min-[1041px]:flex">
+                <x-dropdown align="right" width="48">
+                    <x-slot name="trigger">
+                        <button type="button" class="inline-flex items-center gap-1 rounded-md border border-transparent px-3 py-2 text-sm font-medium leading-5 text-gray-500 transition hover:text-gray-700 focus:outline-none dark:text-gray-400 dark:hover:text-gray-300">
+                            <span class="max-w-[10rem] truncate">{{ Auth::user()->name }}</span>
+                            <svg class="h-4 w-4 fill-current shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </x-slot>
 
-                                <div class="ms-1">
-                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                            </button>
-                        </x-slot>
-
-                        <x-slot name="content">
-                        <div class="block px-4 py-2 mb-0 text-[0.7875rem] text-gray-400 dark:text-gray-300 whitespace-nowrap">
-                        <div class="font-small text-sm text-gray-500 dark:text-gray-400">Olá, {{ Auth::user()->name }}!</div>
+                    <x-slot name="content">
+                        <div class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
+                            Olá, {{ Auth::user()->name }}!
                         </div>
-                            {{--
-                            <x-dropdown-link :href="route('profile.edit')">
-                                {{ __('Profile') }}
+
+                        <button
+                            type="button"
+                            x-data="{ dark: document.documentElement.classList.contains('dark') }"
+                            @click="
+                                dark = !dark;
+                                dark
+                                    ? document.documentElement.classList.add('dark')
+                                    : document.documentElement.classList.remove('dark');
+                                localStorage.setItem('theme', dark ? 'dark' : 'light');
+                            "
+                            class="flex w-full items-center gap-2 px-4 py-2 text-start text-sm text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                        >
+                            <i :class="dark ? 'bx bx-sun' : 'bx bx-moon'" class="text-lg"></i>
+                            <span x-text="dark ? 'Modo claro' : 'Modo escuro'"></span>
+                        </button>
+
+                        <div class="mx-[-1px] my-2 border-t border-gray-200 dark:border-gray-600"></div>
+
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <x-dropdown-link :href="route('logout')" onclick="confirmarLogout(event)">
+                                {{ __('Sair') }}
                             </x-dropdown-link>
-                            --}}
-                            <div class="h-px border-t border-gray-200 opacity-100 mx-[-1] my-2 overflow-hidden"></div>
-
-                            <!-- Authentication -->
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-
-                                <x-dropdown-link :href="route('logout')" onclick="confirmarLogout(event)">
-                                    {{ __('Sair') }}
-                                </x-dropdown-link>
-                            </form>
-                        </x-slot>
-                    </x-dropdown>
-                </div>
+                        </form>
+                    </x-slot>
+                </x-dropdown>
             </div>
 
             <!-- Hamburger -->
@@ -186,41 +215,31 @@
             </x-responsive-nav-link>
         </div>
 
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
-            <div class="px-4 pb-2">
+        <!-- Menu do usuário (mobile) -->
+        <div class="border-t border-gray-200 pt-4 pb-3 dark:border-gray-600">
+            <div class="px-4 font-medium text-base text-gray-800 dark:text-gray-200">
+                Olá, {{ Auth::user()->name }}!
+            </div>
+
+            <div class="mt-2 space-y-1">
                 <button
+                    type="button"
                     x-data="{ dark: document.documentElement.classList.contains('dark') }"
                     @click="
                         dark = !dark;
                         dark
                             ? document.documentElement.classList.add('dark')
-                            : document.documentElement.classList.remove('dark')
+                            : document.documentElement.classList.remove('dark');
+                        localStorage.setItem('theme', dark ? 'dark' : 'light');
                     "
-                    type="button"
-                    class="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition"
+                    class="flex w-full items-center gap-2 px-4 py-2 text-start text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-900 dark:hover:text-white"
                 >
                     <i :class="dark ? 'bx bx-sun' : 'bx bx-moon'" class="text-xl"></i>
                     <span x-text="dark ? 'Modo claro' : 'Modo escuro'"></span>
                 </button>
-            </div>
 
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800 dark:text-gray-200">Olá, {{ Auth::user()->name }}!</div>
-               {{-- <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div> --}}
-            </div>
-            
-            <div class="mt-3 space-y-1">
-               {{--  <h6 class="text-overflow m-0">Olá, {{ Auth::user()->name }}!</h6> --}}
-                {{--
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
-                --}}
-                <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
                     <x-responsive-nav-link :href="route('logout')" onclick="confirmarLogout(event)">
                         {{ __('Sair') }}
                     </x-responsive-nav-link>
