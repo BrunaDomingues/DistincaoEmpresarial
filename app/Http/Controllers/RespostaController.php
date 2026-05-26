@@ -27,7 +27,12 @@ class RespostaController extends Controller
         $request->validate([
             'respostas' => 'required|array',
             'fatores' => 'nullable|array',
-            'input_fatores' => 'nullable|array',  // Novo campo para textos extras
+            'input_fatores' => 'nullable|array',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+        ], [
+            'latitude.required' => 'A localização é obrigatória para enviar o formulário. Ative o GPS/localização no navegador.',
+            'longitude.required' => 'A localização é obrigatória para enviar o formulário. Ative o GPS/localização no navegador.',
         ]);
 
         // Validação dinâmica para fatores obrigatórios

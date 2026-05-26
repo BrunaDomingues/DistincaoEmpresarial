@@ -26,7 +26,33 @@
     }
 @endphp
     <div class="py-6">
-        <div class="max-w-85 mx-auto sm:px-6 lg:px-8" x-data="formularioResponder()" x-init="init()">
+        <div class="max-w-85 mx-auto sm:px-6 lg:px-8 relative" x-data="formularioResponder()" x-init="init()">
+
+            {{-- Bloqueio sem localização --}}
+            <div x-show="localizacaoStatus !== 'ok'" x-cloak
+                class="absolute inset-0 z-40 flex items-start justify-center bg-gray-900/40 px-4 pt-8 sm:pt-16">
+                <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+                    <div class="flex items-start gap-3">
+                        <i class="bx bx-map-pin text-3xl text-indigo-600 shrink-0"></i>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Localização necessária</h3>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-300" x-text="mensagemLocalizacao"></p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+                        <button type="button" @click="solicitarLocalizacao()"
+                            class="flex-1 rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                            :disabled="localizacaoStatus === 'loading'">
+                            <span x-show="localizacaoStatus !== 'loading'">Ativar localização</span>
+                            <span x-show="localizacaoStatus === 'loading'">Obtendo localização...</span>
+                        </button>
+                    </div>
+                    <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                        No celular, permita o acesso à localização nas configurações do navegador ou do site.
+                    </p>
+                </div>
+            </div>
+
             {{-- Barra de Progresso --}}
             <div class="fixed right-4 z-50" style="top: 25%;"
                 x-data="{
@@ -57,7 +83,9 @@
                 </div>
             </div>
 
-            <form id="formulario-resposta" x-ref="form" @submit.prevent="handleSubmit">
+            <form id="formulario-resposta" x-ref="form" @submit.prevent="handleSubmit"
+                :class="localizacaoStatus !== 'ok' ? 'pointer-events-none select-none opacity-40' : ''"
+                :aria-hidden="localizacaoStatus !== 'ok'">
                 <input type="hidden" name="latitude" id="latitude">
                 <input type="hidden" name="longitude" id="longitude">
                 <input type="hidden" name="rua" id="rua">
@@ -272,12 +300,13 @@
                         </button>                       
                         <button type="button" @click="if (validarEtapa(etapa)) etapa++"
                             class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                            x-show="etapa < {{ $formulario->passos->count() - 1 }}">
+                            x-show="etapa < {{ $formulario->passos->count() - 1 }}"
+                            :disabled="localizacaoStatus !== 'ok'">
                             Próximo
                         </button>
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             x-show="etapa === {{ $formulario->passos->count() - 1 }}"
-                            :disabled="enviando"
+                            :disabled="enviando || localizacaoStatus !== 'ok'"
                             >
                             <template x-if="!enviando">
                                 <span>Finalizar</span>
@@ -353,20 +382,137 @@ function calcularProgressoObrigatorio(scope = document) {
 function formularioResponder() {
     return {
         etapa: 0,
-        enviando: false, // variável que controla se está enviando
+        enviando: false,
         inicioTimestamp: null,
+        localizacaoStatus: 'loading',
+        mensagemLocalizacao: 'Aguardando permissão para usar sua localização...',
         init() {
             this.inicioTimestamp = null;
 
             document.querySelectorAll('.resposta-input').forEach(input => {
                 input.addEventListener('input', () => {
                     if (!this.inicioTimestamp) {
-                        this.inicioTimestamp = new Date().toISOString(); // Ex: "2025-07-21T22:01:04.123Z"
+                        this.inicioTimestamp = new Date().toISOString();
                     }
                 }, { once: true });
             });
+
+            this.solicitarLocalizacao();
+        },
+        possuiLocalizacao() {
+            const lat = document.getElementById('latitude')?.value;
+            const lng = document.getElementById('longitude')?.value;
+            return lat !== '' && lng !== '' && lat != null && lng != null;
+        },
+        mensagemErroGeolocalizacao(error) {
+            if (!error) {
+                return 'Não foi possível obter sua localização. Tente novamente.';
+            }
+            if (error.code === 1) {
+                return 'Você negou o acesso à localização. Ative a permissão nas configurações do navegador para continuar.';
+            }
+            if (error.code === 2) {
+                return 'Localização indisponível no momento. Verifique se o GPS está ligado e tente novamente.';
+            }
+            if (error.code === 3) {
+                return 'Tempo esgotado ao buscar a localização. Tente novamente em um local com melhor sinal.';
+            }
+            return 'Não foi possível obter sua localização. Tente novamente.';
+        },
+        limparCamposLocalizacao() {
+            ['latitude', 'longitude', 'rua', 'bairro', 'cidade', 'estado'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.value = '';
+                }
+            });
+        },
+        preencherCoordenadas(lat, lng) {
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+        },
+        async reverseGeocode(lat, lng) {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                const data = await res.json();
+                const address = data.address || {};
+                document.getElementById('rua').value = address.road || '';
+                document.getElementById('bairro').value =
+                    address.suburb
+                    || address.neighbourhood
+                    || address.quarter
+                    || address.city_district
+                    || address.district
+                    || address.residential
+                    || '';
+                document.getElementById('cidade').value = address.city || address.town || address.village || '';
+                document.getElementById('estado').value = address.state || '';
+            } catch (e) {
+                console.warn('Erro ao buscar endereço:', e);
+            }
+        },
+        obterPosicao(options) {
+            return new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, options);
+            });
+        },
+        async solicitarLocalizacao() {
+            if (!('geolocation' in navigator)) {
+                this.localizacaoStatus = 'unsupported';
+                this.mensagemLocalizacao = 'Seu navegador não suporta geolocalização. Use Chrome, Safari ou Firefox atualizado.';
+                this.limparCamposLocalizacao();
+                return;
+            }
+
+            this.localizacaoStatus = 'loading';
+            this.mensagemLocalizacao = 'Aguardando permissão para usar sua localização...';
+            this.limparCamposLocalizacao();
+
+            try {
+                const pos = await this.obterPosicao({ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+                await this.aplicarLocalizacao(pos.coords.latitude, pos.coords.longitude);
+                return;
+            } catch (error) {
+                if (error.code === 1) {
+                    this.localizacaoStatus = 'denied';
+                    this.mensagemLocalizacao = this.mensagemErroGeolocalizacao(error);
+                    this.limparCamposLocalizacao();
+                    return;
+                }
+
+                if (error.code === 3) {
+                    try {
+                        const pos = await this.obterPosicao({ enableHighAccuracy: false, timeout: 8000, maximumAge: 0 });
+                        await this.aplicarLocalizacao(pos.coords.latitude, pos.coords.longitude);
+                        return;
+                    } catch (error2) {
+                        this.localizacaoStatus = 'error';
+                        this.mensagemLocalizacao = this.mensagemErroGeolocalizacao(error2);
+                        this.limparCamposLocalizacao();
+                        return;
+                    }
+                }
+
+                this.localizacaoStatus = 'error';
+                this.mensagemLocalizacao = this.mensagemErroGeolocalizacao(error);
+                this.limparCamposLocalizacao();
+            }
+        },
+        async aplicarLocalizacao(lat, lng) {
+            this.preencherCoordenadas(lat, lng);
+            await this.reverseGeocode(lat, lng);
+            this.localizacaoStatus = 'ok';
+            this.mensagemLocalizacao = '';
         },
         validarEtapa(index) {
+            if (this.localizacaoStatus !== 'ok') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Localização obrigatória',
+                    text: 'Ative a localização do dispositivo para responder o formulário.',
+                });
+                return false;
+            }
             const etapaAtual = document.querySelectorAll(`[x-show="etapa === ${index}"]`)[0];
             let faltaFator = false;
             let faltaRespostaParaFator = false;
@@ -459,7 +605,17 @@ function formularioResponder() {
             return true;
         },
         async handleSubmit() {
-            if (this.enviando) return; // evita duplo clique por segurança extra
+            if (this.enviando) return;
+
+            if (this.localizacaoStatus !== 'ok' || !this.possuiLocalizacao()) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Localização obrigatória',
+                    text: 'Ative a localização do dispositivo para enviar o formulário.',
+                });
+                this.solicitarLocalizacao();
+                return;
+            }
 
             if (!this.validarEtapa(this.etapa) || !this.validarProgressoMinimo()) {
                 return;
@@ -535,85 +691,5 @@ function formularioResponder() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    function setPositionValues(position) {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        document.getElementById('latitude').value = lat;
-        document.getElementById('longitude').value = lng;
-        return { lat, lng };
-    }
-
-    async function reverseGeocode(lat, lng) {
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            const data = await res.json();
-            const address = data.address || {};
-            document.getElementById('rua').value = address.road || '';
-            document.getElementById('bairro').value =
-                address.suburb
-                || address.neighbourhood
-                || address.quarter
-                || address.city_district
-                || address.district
-                || address.residential
-                || '';
-            document.getElementById('cidade').value = address.city || address.town || address.village || '';
-            document.getElementById('estado').value = address.state || '';
-        } catch (e) {
-            console.warn("Erro ao buscar endereço:", e);
-            // Se quiser, pode colocar valores padrão aqui também, opcional
-        }
-    }
-
-    function setDefaultLocation() {
-        document.getElementById('latitude').value = '';
-        document.getElementById('longitude').value = '';
-        document.getElementById('rua').value = '';
-        document.getElementById('bairro').value = '';
-        document.getElementById('cidade').value = '';
-        document.getElementById('estado').value = '';
-    }
-
-    function getPosition(options) {
-        return new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, options);
-        });
-    }
-
-    async function tryGeolocation() {
-        if (!('geolocation' in navigator)) {
-            console.warn("Geolocalização não suportada.");
-            setDefaultLocation();
-            return;
-        }
-
-        try {
-            // 1ª tentativa: alta precisão, timeout 10s
-            const pos = await getPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
-            const { lat, lng } = setPositionValues(pos);
-            await reverseGeocode(lat, lng);
-        } catch (error) {
-            if (error.code === error.TIMEOUT) {
-                console.warn("Timeout na tentativa com alta precisão, tentando sem alta precisão...");
-
-                try {
-                    // 2ª tentativa: sem alta precisão, timeout 5s
-                    const pos = await getPosition({ enableHighAccuracy: false, timeout: 5000, maximumAge: 0 });
-                    const { lat, lng } = setPositionValues(pos);
-                    await reverseGeocode(lat, lng);
-                } catch (error2) {
-                    console.warn("Não foi possível obter a localização:", error2.message);
-                    setDefaultLocation();
-                }
-            } else {
-                console.warn("Erro ao obter geolocalização:", error.message);
-                setDefaultLocation();
-            }
-        }
-    }
-
-    tryGeolocation();
-});
 </script>
 </x-app-layout>

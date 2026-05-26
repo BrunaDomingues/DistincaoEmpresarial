@@ -77,9 +77,6 @@
                             <x-nav-link :href="route('respostas-tratadas.index')" :active="request()->routeIs('respostas-tratadas.*')">
                                 Respostas Tratadas
                             </x-nav-link>
-                            <x-nav-link :href="route('validar-envios.index')" :active="request()->routeIs('validar-envios.*')">
-                                Validar envios
-                            </x-nav-link>
                             <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
                                 Usuários
                             </x-nav-link>
@@ -189,9 +186,6 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('respostas-tratadas.index')" :active="request()->routeIs('respostas-tratadas.*')">
                         Respostas Tratadas
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('validar-envios.index')" :active="request()->routeIs('validar-envios.*')">
-                        Validar envios
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
                         Usuários

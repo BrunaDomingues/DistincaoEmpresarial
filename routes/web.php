@@ -13,7 +13,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RelatorioAplicadoresController;
 use App\Http\Controllers\RelatorioRespondentesPorBairroController;
-use App\Http\Controllers\FormularioEnvioController;
 use App\Http\Controllers\RelatorioClassificacaoController;
 
 Route::get('/', function () {
@@ -66,9 +65,6 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('formularios', FormularioController::class);
     Route::get('formularios/{formulario}/parametrizar', [FormularioController::class, 'parametrizar'])->name('formularios.parametrizar');
 
-    Route::get('/envios-validacao', [FormularioEnvioController::class, 'indexValidados'])->name('validar-envios.index');
-    Route::get('/envios-validacao/{id}', [FormularioEnvioController::class, 'analisar'])->name('validar.envio');
-    Route::put('/envios-validacao/{id}', [FormularioEnvioController::class, 'store'])->name('validar-envios.store');
 });
 
 Route::middleware(['auth'])->group(function () {
