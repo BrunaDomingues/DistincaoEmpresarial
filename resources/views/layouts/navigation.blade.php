@@ -112,6 +112,11 @@
                     <x-nav-link :href="route('responder-formularios.index')" :active="request()->routeIs('responder-formularios.*')">
                         Responder Formulários
                     </x-nav-link>
+                    @if (Auth::id() === 1)
+                        <x-nav-link :href="route('insight.ranking-empresas')" :active="request()->routeIs('insight.*')">
+                            Ranking empresas
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -207,6 +212,11 @@
             <x-responsive-nav-link :href="route('responder-formularios.index')" :active="request()->routeIs('responder-formularios.*')">
                 Responder Formulários
             </x-responsive-nav-link>
+            @if (Auth::id() === 1)
+                <x-responsive-nav-link :href="route('insight.ranking-empresas')" :active="request()->routeIs('insight.*')">
+                    Ranking empresas (insight)
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Menu do usuário (mobile) -->

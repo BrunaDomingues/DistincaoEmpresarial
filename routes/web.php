@@ -14,6 +14,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RelatorioAplicadoresController;
 use App\Http\Controllers\RelatorioRespondentesPorBairroController;
 use App\Http\Controllers\RelatorioClassificacaoController;
+use App\Http\Controllers\RankEmpresasInsightController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -22,6 +23,11 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::middleware(['auth', 'verified', 'insight.user_id_one'])->prefix('insight')->name('insight.')->group(function () {
+    Route::get('/ranking-empresas', [RankEmpresasInsightController::class, 'index'])->name('ranking-empresas');
+    Route::post('/ranking-empresas', [RankEmpresasInsightController::class, 'analisar'])->name('ranking-empresas.analisar');
+});
 
 Route::prefix('relatorios')->middleware(['auth','admin'])->group(function () {
     Route::get('/bairros', [RelatorioRespondentesPorBairroController::class, 'index'])
