@@ -92,6 +92,7 @@
                 <input type="hidden" name="bairro" id="bairro">
                 <input type="hidden" name="cidade" id="cidade">
                 <input type="hidden" name="estado" id="estado">
+                <input type="hidden" name="cep" id="cep">
                 <div>
                     <!-- Navegação das etapas -->
                     <div class="flex mb-3 gap-2 overflow-x-auto">
@@ -107,6 +108,67 @@
                     <!-- Conteúdo dos passos -->
                     @foreach($formulario->passos->sortBy('ordem') as $i => $passo)
                         <div x-show="etapa === {{ $i }}" x-transition >
+                            @if($i === 0)
+                                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6 mb-3 border border-indigo-100 dark:border-indigo-900/40"
+                                    x-show="localizacaoStatus === 'ok'"
+                                    x-transition>
+                                    <div class="flex items-start gap-3 mb-4">
+                                        <i class="bx bx-map text-2xl text-indigo-600 shrink-0"></i>
+                                        <div>
+                                            <h3 class="font-medium text-gray-900 dark:text-white">Confirme sua localização</h3>
+                                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                                Detectamos onde você está. Confira o endereço abaixo e ajuste se necessário.
+                                            </p>
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-500"
+                                                x-show="enderecoExibicao.cidade"
+                                                x-text="[enderecoExibicao.cidade, enderecoExibicao.estado].filter(Boolean).join(' — ')">
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="grid gap-4 sm:grid-cols-2">
+                                        <div class="sm:col-span-2">
+                                            <label for="rua-confirmacao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                Rua
+                                            </label>
+                                            <input type="text" id="rua-confirmacao"
+                                                placeholder="Nome da rua"
+                                                x-model="enderecoExibicao.rua"
+                                                @input="enderecoConfirmado = false; sincronizarEnderecoHidden()"
+                                                class="w-full border rounded p-2 bg-white dark:bg-gray-900 dark:text-white dark:border-gray-600">
+                                        </div>
+                                        <div>
+                                            <label for="cep-confirmacao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                CEP <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" id="cep-confirmacao" inputmode="numeric" maxlength="9"
+                                                placeholder="00000-000"
+                                                x-model="enderecoExibicao.cep"
+                                                @input="aoEditarCep()"
+                                                @blur="buscarBairroPorCep()"
+                                                class="w-full border rounded p-2 bg-white dark:bg-gray-900 dark:text-white dark:border-gray-600">
+                                        </div>
+                                        <div>
+                                            <label for="bairro-confirmacao" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                Bairro <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" id="bairro-confirmacao"
+                                                placeholder="Nome do bairro"
+                                                x-model="enderecoExibicao.bairro"
+                                                @input="enderecoConfirmado = false; sincronizarEnderecoHidden()"
+                                                class="w-full border rounded p-2 bg-white dark:bg-gray-900 dark:text-white dark:border-gray-600">
+                                        </div>
+                                    </div>
+                                    <p class="mt-2 text-xs text-amber-600 dark:text-amber-400" x-show="erroCep" x-text="erroCep"></p>
+                                    <label class="mt-4 flex items-start gap-2 cursor-pointer">
+                                        <input type="checkbox"
+                                            x-model="enderecoConfirmado"
+                                            class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                        <span class="text-sm text-gray-700 dark:text-gray-300">
+                                            Confirmo que o endereço (rua, bairro e CEP) está correto
+                                        </span>
+                                    </label>
+                                </div>
+                            @endif
                             @foreach($passo->perguntas as $pergunta)
                                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6 mb-3 pergunta-card"
                                     data-pergunta-id="{{ $pergunta->id }}"
@@ -298,7 +360,7 @@
                             x-show="etapa > 0">
                             Voltar
                         </button>                       
-                        <button type="button" @click="if (validarEtapa(etapa)) etapa++"
+                        <button type="button" @click="if (validarConfirmacaoEndereco() && validarEtapa(etapa)) etapa++"
                             class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
                             x-show="etapa < {{ $formulario->passos->count() - 1 }}"
                             :disabled="localizacaoStatus !== 'ok'">
@@ -386,6 +448,15 @@ function formularioResponder() {
         inicioTimestamp: null,
         localizacaoStatus: 'loading',
         mensagemLocalizacao: 'Aguardando permissão para usar sua localização...',
+        enderecoConfirmado: false,
+        erroCep: '',
+        enderecoExibicao: {
+            rua: '',
+            bairro: '',
+            cep: '',
+            cidade: '',
+            estado: '',
+        },
         init() {
             this.inicioTimestamp = null;
 
@@ -420,33 +491,154 @@ function formularioResponder() {
             return 'Não foi possível obter sua localização. Tente novamente.';
         },
         limparCamposLocalizacao() {
-            ['latitude', 'longitude', 'rua', 'bairro', 'cidade', 'estado'].forEach(id => {
+            ['latitude', 'longitude', 'rua', 'bairro', 'cidade', 'estado', 'cep'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.value = '';
                 }
             });
+            this.enderecoConfirmado = false;
+            this.erroCep = '';
+            this.enderecoExibicao = { rua: '', bairro: '', cep: '', cidade: '', estado: '' };
+        },
+        sincronizarEnderecoHidden() {
+            document.getElementById('rua').value = (this.enderecoExibicao.rua || '').trim();
+            document.getElementById('bairro').value = (this.enderecoExibicao.bairro || '').trim();
+            document.getElementById('cep').value = this.normalizarCep(this.enderecoExibicao.cep);
+            this.enderecoExibicao.cep = document.getElementById('cep').value;
+        },
+        carregarEnderecoParaConfirmacao() {
+            this.enderecoExibicao = {
+                rua: document.getElementById('rua')?.value || '',
+                bairro: document.getElementById('bairro')?.value || '',
+                cep: document.getElementById('cep')?.value || '',
+                cidade: document.getElementById('cidade')?.value || '',
+                estado: document.getElementById('estado')?.value || '',
+            };
+            this.enderecoConfirmado = false;
+        },
+        aoEditarCep() {
+            this.erroCep = '';
+            this.enderecoConfirmado = false;
+            this.sincronizarEnderecoHidden();
+        },
+        async buscarBairroPorCep() {
+            const cep = this.normalizarCep(this.enderecoExibicao.cep);
+            if (!cep) {
+                this.erroCep = '';
+                this.sincronizarEnderecoHidden();
+                return;
+            }
+
+            this.enderecoExibicao.cep = cep;
+            this.sincronizarEnderecoHidden();
+
+            const dados = await this.buscarEnderecoPorCep(cep);
+            if (!dados) {
+                this.erroCep = 'CEP não encontrado. Verifique o número digitado.';
+                return;
+            }
+
+            this.erroCep = '';
+            if (dados.bairro && !this.enderecoExibicao.bairro.trim()) {
+                this.enderecoExibicao.bairro = dados.bairro.trim();
+            }
+            if (dados.localidade) {
+                document.getElementById('cidade').value = dados.localidade;
+                this.enderecoExibicao.cidade = dados.localidade;
+            }
+            if (dados.uf) {
+                document.getElementById('estado').value = dados.uf;
+                this.enderecoExibicao.estado = dados.uf;
+            }
+            if (dados.logradouro && !this.enderecoExibicao.rua.trim()) {
+                this.enderecoExibicao.rua = dados.logradouro.trim();
+            }
+            this.sincronizarEnderecoHidden();
         },
         preencherCoordenadas(lat, lng) {
             document.getElementById('latitude').value = lat;
             document.getElementById('longitude').value = lng;
         },
+        extrairCidade(address) {
+            return address.city || address.town || address.village || address.municipality || '';
+        },
+        extrairBairro(address) {
+            const cidade = this.extrairCidade(address).trim().toLowerCase();
+            const candidatos = [
+                address.suburb,
+                address.neighbourhood,
+                address.quarter,
+                address.borough,
+                address.residential,
+            ];
+
+            for (const valor of candidatos) {
+                if (!valor) {
+                    continue;
+                }
+
+                const bairro = valor.trim();
+                if (!bairro || bairro.toLowerCase() === cidade) {
+                    continue;
+                }
+
+                return bairro;
+            }
+
+            return '';
+        },
+        normalizarCep(cep) {
+            const digitos = String(cep || '').replace(/\D/g, '');
+            if (digitos.length !== 8) {
+                return '';
+            }
+
+            return `${digitos.slice(0, 5)}-${digitos.slice(5)}`;
+        },
+        async buscarEnderecoPorCep(cep) {
+            const cepNormalizado = this.normalizarCep(cep);
+            if (!cepNormalizado) {
+                return null;
+            }
+
+            try {
+                const res = await fetch(`https://viacep.com.br/ws/${cepNormalizado.replace('-', '')}/json/`);
+                const dados = await res.json();
+
+                if (dados.erro) {
+                    return null;
+                }
+
+                return dados;
+            } catch (e) {
+                console.warn('Erro ao buscar CEP:', e);
+                return null;
+            }
+        },
         async reverseGeocode(lat, lng) {
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=pt-BR`;
+                const res = await fetch(url);
                 const data = await res.json();
                 const address = data.address || {};
+                const cep = this.normalizarCep(address.postcode);
+
                 document.getElementById('rua').value = address.road || '';
-                document.getElementById('bairro').value =
-                    address.suburb
-                    || address.neighbourhood
-                    || address.quarter
-                    || address.city_district
-                    || address.district
-                    || address.residential
-                    || '';
-                document.getElementById('cidade').value = address.city || address.town || address.village || '';
+                document.getElementById('cidade').value = this.extrairCidade(address);
                 document.getElementById('estado').value = address.state || '';
+                document.getElementById('cep').value = cep;
+
+                let bairro = this.extrairBairro(address);
+
+                if (!bairro && cep) {
+                    const dadosCep = await this.buscarEnderecoPorCep(cep);
+                    if (dadosCep?.bairro) {
+                        bairro = dadosCep.bairro.trim();
+                    }
+                }
+
+                document.getElementById('bairro').value = bairro;
             } catch (e) {
                 console.warn('Erro ao buscar endereço:', e);
             }
@@ -501,8 +693,45 @@ function formularioResponder() {
         async aplicarLocalizacao(lat, lng) {
             this.preencherCoordenadas(lat, lng);
             await this.reverseGeocode(lat, lng);
+            this.carregarEnderecoParaConfirmacao();
             this.localizacaoStatus = 'ok';
             this.mensagemLocalizacao = '';
+        },
+        validarConfirmacaoEndereco(forcar = false) {
+            if (!forcar && this.etapa !== 0) {
+                return true;
+            }
+
+            this.sincronizarEnderecoHidden();
+
+            const bairro = (this.enderecoExibicao.bairro || '').trim();
+            const cep = this.normalizarCep(this.enderecoExibicao.cep);
+
+            if (!cep || !bairro) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Localização incompleta',
+                    text: 'Informe o CEP e o bairro para continuar.',
+                });
+                if (forcar) {
+                    this.etapa = 0;
+                }
+                return false;
+            }
+
+            if (!this.enderecoConfirmado) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Confirme sua localização',
+                    text: 'Marque a opção confirmando que o endereço está correto.',
+                });
+                if (forcar) {
+                    this.etapa = 0;
+                }
+                return false;
+            }
+
+            return true;
         },
         validarEtapa(index) {
             if (this.localizacaoStatus !== 'ok') {
@@ -617,7 +846,9 @@ function formularioResponder() {
                 return;
             }
 
-            if (!this.validarEtapa(this.etapa) || !this.validarProgressoMinimo()) {
+            this.sincronizarEnderecoHidden();
+
+            if (!this.validarConfirmacaoEndereco(true) || !this.validarEtapa(this.etapa) || !this.validarProgressoMinimo()) {
                 return;
             }
 

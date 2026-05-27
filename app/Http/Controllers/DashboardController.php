@@ -1,8 +1,10 @@
 <?php
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -18,7 +20,9 @@ class DashboardController extends Controller
             $totalUsuarios = 0;
             $enviosRecentes = [];
             $dadosPorBairro = [];
-            
+            $pontosMapaJson = [];
+            $totalEnviosComGeo = 0;
+
             return view('dashboard', compact(
                 'envios',
                 'totalEnvios',
@@ -26,7 +30,9 @@ class DashboardController extends Controller
                 'totalBairros',
                 'totalUsuarios',
                 'enviosRecentes',
-                'dadosPorBairro'
+                'dadosPorBairro',
+                'pontosMapaJson',
+                'totalEnviosComGeo'
             ));
         }
 
@@ -81,6 +87,54 @@ class DashboardController extends Controller
             ->orderByDesc('total')
             ->get();
 
+        $totalEnviosComGeo = DB::table('formulario_envios')
+            ->where('invalido', false)
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->count();
+
+        $limiteMapa = 800;
+        $selectMapa = [
+            'fe.latitude',
+            'fe.longitude',
+            'fe.rua',
+            'fe.bairro',
+            'fe.cidade',
+            'fe.estado',
+            'fe.created_at',
+            'formularios.titulo as formulario_titulo',
+        ];
+        if (Schema::hasColumn('formulario_envios', 'cep')) {
+            $selectMapa[] = 'fe.cep';
+        }
+
+        $pontosMapaColecao = DB::table('formulario_envios as fe')
+            ->join('formularios', 'fe.formulario_id', '=', 'formularios.id')
+            ->where('fe.invalido', false)
+            ->whereNotNull('fe.latitude')
+            ->whereNotNull('fe.longitude')
+            ->select($selectMapa)
+            ->orderByDesc('fe.created_at')
+            ->limit($limiteMapa)
+            ->get();
+
+        $pontosMapaJson = $pontosMapaColecao->map(function ($p) {
+            $partes = array_filter([
+                $p->rua ?? null,
+                $p->bairro ?? null,
+                $p->cidade ?? null,
+                property_exists($p, 'cep') && $p->cep ? 'CEP '.$p->cep : null,
+            ]);
+
+            return [
+                'lat' => round((float) $p->latitude, 7),
+                'lng' => round((float) $p->longitude, 7),
+                'formulario' => $p->formulario_titulo,
+                'data' => Carbon::parse($p->created_at)->timezone('America/Sao_Paulo')->format('d/m/Y H:i'),
+                'endereco' => implode(', ', $partes),
+            ];
+        })->values()->all();
+
         return view('dashboard', compact(
             'envios',
             'totalEnvios',
@@ -88,7 +142,9 @@ class DashboardController extends Controller
             'totalBairros',
             'totalUsuarios',
             'enviosRecentes',
-            'dadosPorBairro'
+            'dadosPorBairro',
+            'pontosMapaJson',
+            'totalEnviosComGeo'
         ));
     }
 

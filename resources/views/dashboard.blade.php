@@ -375,6 +375,32 @@
             max-width: 100%;
         }
 
+        .mapa-envios-canvas {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 4px;
+        }
+
+        .mapa-envios-container .leaflet-container {
+            font-family: inherit;
+        }
+
+        .mapa-envios-meta {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .mapa-popup {
+            line-height: 1.45;
+            font-size: 0.9rem;
+        }
+
+        .mapa-popup strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
         /* Responsive Design */
         @media (max-width: 1100px) {
             .content-grid {
@@ -581,9 +607,24 @@
                     --}}
                 </div>
 
-                
-
             </div>
+
+            <div class="chart-container mapa-envios-container">
+                <div class="section-header">
+                    <h3 class="section-title">Mapa de envios (GPS)</h3>
+                    @if (count($pontosMapaJson) > 0 && $totalEnviosComGeo > count($pontosMapaJson))
+                        <span class="mapa-envios-meta">Mostrando os {{ count($pontosMapaJson) }} mais recentes de {{ $totalEnviosComGeo }} com localização</span>
+                    @elseif (count($pontosMapaJson) > 0)
+                        <span class="mapa-envios-meta">{{ $totalEnviosComGeo }} envio(s) com localização</span>
+                    @endif
+                </div>
+                @if (count($pontosMapaJson) === 0)
+                    <p class="mapa-envios-meta" style="padding: 1rem 0;">Nenhum envio com latitude e longitude registradas ainda.</p>
+                @else
+                    <div id="mapa-envios" class="mapa-envios-canvas" role="region" aria-label="Mapa de pontos de envio"></div>
+                @endif
+            </div>
+
         </div>
     </div>
 
@@ -600,15 +641,30 @@
         </div>
     @endif
     
+@if (Auth::user()->is_admin)
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
 <script>
+function escapeHtmlMapa(text) {
+    if (text === null || text === undefined) {
+        return '';
+    }
+    const d = document.createElement('div');
+    d.textContent = String(text);
+    return d.innerHTML;
+}
+
 function atualizarEnvios() {
+    const list = document.querySelector('.status-list');
+    if (!list) {
+        return;
+    }
     fetch('/envios-por-usuario')
         .then(response => response.json())
         .then(data => {
-            const list = document.querySelector('.status-list');
             list.innerHTML = '';
 
             let totalGeral = 0;
@@ -624,7 +680,6 @@ function atualizarEnvios() {
                 totalGeral += parseInt(envio.total_envios);
             });
 
-            // Adiciona totalizador
             const totalItem = document.createElement('div');
             totalItem.className = 'status-item';
             totalItem.innerHTML = `
@@ -640,72 +695,99 @@ function atualizarEnvios() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-        const ctx = document.getElementById('graficoBairros').getContext('2d');
+        const graficoEl = document.getElementById('graficoBairros');
+        if (graficoEl && typeof Chart !== 'undefined') {
+            const ctx = graficoEl.getContext('2d');
 
-        const data = {
-            @if (!empty($dadosPorBairro))
-                labels: {!! json_encode(collect($dadosPorBairro)->pluck('bairro')) !!},
-            @else
-                labels: [],
-            @endif
-
-            datasets: [{
-                label: 'Total de Envios',
+            const data = {
                 @if (!empty($dadosPorBairro))
-                    data: {!! json_encode(collect($dadosPorBairro)->pluck('total')) !!},
+                    labels: {!! json_encode(collect($dadosPorBairro)->pluck('bairro')) !!},
                 @else
-                    data: [],
+                    labels: [],
                 @endif
 
-                backgroundColor: '#4361ee'
-            }]
-        };
+                datasets: [{
+                    label: 'Total de Envios',
+                    @if (!empty($dadosPorBairro))
+                        data: {!! json_encode(collect($dadosPorBairro)->pluck('total')) !!},
+                    @else
+                        data: [],
+                    @endif
 
-        const config = {
-            type: 'bar',
-            data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: context => `Total: ${context.raw}`
+                    backgroundColor: '#4361ee'
+                }]
+            };
+
+            const config = {
+                type: 'bar',
+                data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `Total: ${context.raw}`
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: (value) => value,
+                            color: '#000'
                         }
                     },
-                    datalabels: {
-                        anchor: 'end',
-                        align: 'top',
-                        formatter: (value) => value,
-                        color: '#000'
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Total' }
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: true,
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        }
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'Total' }
-                    },
-                    x: {
-                        ticks: {
-                            autoSkip: true,
-                            maxRotation: 45,
-                            minRotation: 0
-                        }
-                    }
-                }
-            },
-            plugins: [ChartDataLabels]
-        };
+                plugins: [ChartDataLabels]
+            };
 
-        // Verifique se ChartDataLabels está disponível antes de criar o gráfico
-        if (typeof ChartDataLabels !== 'undefined') {
-            new Chart(ctx, config);
-        } else {
-            console.error('ChartDataLabels não foi carregado corretamente.');
+            if (typeof ChartDataLabels !== 'undefined') {
+                new Chart(ctx, config);
+            } else {
+                console.error('ChartDataLabels não foi carregado corretamente.');
+            }
+        }
+
+        const mapaEl = document.getElementById('mapa-envios');
+        const pontosMapa = @json($pontosMapaJson);
+        if (mapaEl && typeof L !== 'undefined' && Array.isArray(pontosMapa) && pontosMapa.length > 0) {
+            const mapa = L.map('mapa-envios', { scrollWheelZoom: false });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            }).addTo(mapa);
+
+            const bounds = [];
+            pontosMapa.forEach((p) => {
+                bounds.push([p.lat, p.lng]);
+                const popupHtml = '<div class="mapa-popup"><strong>' + escapeHtmlMapa(p.formulario) + '</strong>'
+                    + escapeHtmlMapa(p.data) + '<br>' + escapeHtmlMapa(p.endereco || '—') + '</div>';
+                L.marker([p.lat, p.lng]).addTo(mapa).bindPopup(popupHtml);
+            });
+
+            if (bounds.length === 1) {
+                mapa.setView(bounds[0], 15);
+            } else {
+                mapa.fitBounds(L.latLngBounds(bounds), { padding: [40, 40], maxZoom: 15 });
+            }
         }
     });
 </script>
+@endif
 
 <!-- Importa o plugin para mostrar os totais nas barras -->
 

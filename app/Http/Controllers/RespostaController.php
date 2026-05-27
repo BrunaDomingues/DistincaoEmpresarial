@@ -68,6 +68,7 @@ class RespostaController extends Controller
             'bairro' => $request->input('bairro'),
             'cidade' => $request->input('cidade'),
             'estado' => $request->input('estado'),
+            'cep' => $request->input('cep'),
             'inicio_resposta' => $inicio,
             'fim_resposta' => $fim,
             'duracao_em_segundos' => $duracao,

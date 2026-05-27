@@ -22,6 +22,7 @@ class FormularioEnvio extends Model
         'bairro',
         'cidade',
         'estado',
+        'cep',
         'inicio_resposta',
         'fim_resposta',
         'duracao_em_segundos',
