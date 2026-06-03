@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="max-w-7xl mx-auto px-4 space-y-12">
+    <div class="max-w-85 mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
         @foreach($dados as $grupoData)
             <div>
                 <h2 class="text-lg font-semibold bg-gray-200 px-2 py-1 rounded">

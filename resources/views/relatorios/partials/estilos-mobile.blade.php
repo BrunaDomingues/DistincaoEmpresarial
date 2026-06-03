@@ -1,4 +1,19 @@
 <style>
+    /* Alinhamento com menu/header (max-w-85) e selects de filtro legíveis */
+    .relatorio-filtro-select {
+        width: 100%;
+        min-width: 12rem;
+        padding: 0.5rem 0.75rem;
+    }
+    .relatorio-filtro-select--wide {
+        min-width: 16rem;
+    }
+    @media (min-width: 640px) {
+        .relatorio-filtro-select {
+            width: auto;
+        }
+    }
+
     @media (max-width: 1040px) {
         .relatorio-acoes {
             flex-direction: column !important;
@@ -13,6 +28,7 @@
         }
         .relatorio-acoes form select {
             width: 100% !important;
+            min-width: 0 !important;
             padding: 0.5rem 0.75rem !important;
         }
         .relatorio-acoes .btn-relatorio {
@@ -27,6 +43,7 @@
         }
         .relatorio-form-mobile select {
             width: 100% !important;
+            min-width: 0 !important;
             padding: 0.5rem 0.75rem !important;
         }
         .relatorio-form-mobile .btn-relatorio {

@@ -104,7 +104,9 @@
                                     <x-dropdown-link href="{{ route('relatorios.bairros') }}">
                                         Respondentes por bairro
                                     </x-dropdown-link>
-                                    {{-- Outros relatórios podem ser adicionados aqui --}}
+                                    <x-dropdown-link href="{{ route('relatorios.envios-usuarios') }}">
+                                        Envios por usuário e horário
+                                    </x-dropdown-link>
                                 </x-slot>
                             </x-dropdown>
                         @endif
@@ -206,6 +208,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('relatorios.bairros')" :active="request()->routeIs('relatorios.bairros')">
                         Relatório: Respondentes por bairro
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('relatorios.envios-usuarios')" :active="request()->routeIs('relatorios.envios-usuarios')">
+                        Relatório: Envios por usuário e horário
                     </x-responsive-nav-link>
                 @endif
             @endauth

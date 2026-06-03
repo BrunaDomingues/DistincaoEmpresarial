@@ -15,6 +15,7 @@ use App\Http\Controllers\RelatorioAplicadoresController;
 use App\Http\Controllers\RelatorioRespondentesPorBairroController;
 use App\Http\Controllers\RelatorioClassificacaoController;
 use App\Http\Controllers\RankEmpresasInsightController;
+use App\Http\Controllers\RelatorioEnviosUsuariosController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -50,6 +51,12 @@ Route::prefix('relatorios')->middleware(['auth','admin'])->group(function () {
 
     Route::get('/classificacao', [RelatorioClassificacaoController::class, 'classificacao'])->name('relatorios.classificacao');
     Route::post('/classificacao/filtro', [RelatorioClassificacaoController::class, 'classificacaoFiltrar'])->name('relatorios.classificacao.filtrar');
+
+    Route::get('/envios-usuarios', [RelatorioEnviosUsuariosController::class, 'index'])
+        ->name('relatorios.envios-usuarios');
+
+    Route::get('/envios-usuarios/export', [RelatorioEnviosUsuariosController::class, 'exportar'])
+        ->name('relatorios.envios-usuarios.export');
 
 });
 

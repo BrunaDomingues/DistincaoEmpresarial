@@ -8,14 +8,13 @@
     @include('relatorios.partials.estilos-mobile')
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-85 mx-auto px-4 sm:px-6 lg:px-8">
 
             <div class="mb-4 flex items-center justify-between relatorio-acoes">
                 <form method="GET" class="flex items-center gap-2">
                     <label for="data" class="font-medium text-gray-700 dark:text-gray-300">Filtrar por data:</label>
                     <select name="data" id="data" onchange="this.form.submit()"
-                        class="border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded px-2 py-1"
-                        style="min-width: 160px;">
+                        class="relatorio-filtro-select border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded">
                         <option value="">Todas</option>
                         @foreach ($datasDisponiveis as $data)
                             <option value="{{ $data }}" @selected(request('data') == $data)>

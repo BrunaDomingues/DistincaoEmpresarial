@@ -14,7 +14,7 @@
     @include('relatorios.partials.estilos-mobile')
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        <div class="max-w-85 mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
             @if (count($dadosAgrupados) === 0)
                 <p class="text-gray-600 dark:text-gray-300">Nenhum segmento com fatores de satisfação encontrado neste formulário.</p>
             @endif

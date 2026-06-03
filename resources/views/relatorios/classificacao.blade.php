@@ -8,14 +8,14 @@
     @include('relatorios.partials.estilos-mobile')
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-85 mx-auto px-4 sm:px-6 lg:px-8">
             <form method="POST" action="{{ route('relatorios.classificacao.filtrar') }}" class="relatorio-form-mobile mb-6">
                 @csrf
                 <label for="formulario_id" class="block font-medium mb-1 text-gray-700 dark:text-gray-300">
                     Selecione o Questionário:
                 </label>
                 <select name="formulario_id" id="formulario_id"
-                    class="border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white p-2 rounded w-full max-w-md">
+                    class="relatorio-filtro-select relatorio-filtro-select--wide border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded">
                     <option value="">-- Selecione --</option>
                     @foreach($formularios as $form)
                         <option value="{{ $form->id }}">{{ $form->titulo }}</option>

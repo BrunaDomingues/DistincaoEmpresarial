@@ -8,7 +8,7 @@
     @include('relatorios.partials.estilos-mobile')
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        <div class="max-w-85 mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
             <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
                 <p class="font-medium">Somente leitura</p>
                 <p class="mt-1">Esta tela usa as mesmas consultas do relatório de classificação e agrupa nomes parecidos <strong>em memória</strong>. Nada é gravado ou alterado no banco. Ajuste aliases em <code class="rounded bg-amber-100 px-1 dark:bg-amber-900">config/insight_empresa_aliases.php</code> quando aparecerem novas grafias conhecidas.</p>
