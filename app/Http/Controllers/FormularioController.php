@@ -68,6 +68,20 @@ class FormularioController extends Controller
         return redirect()->route('formularios.index')->with('success', 'Formulário removido com sucesso.');
     }
 
+    public function toggleAceitandoRespostas(Formulario $formulario)
+    {
+        $formulario->update([
+            'aceitando_respostas' => ! $formulario->aceitando_respostas,
+            'updated_by' => Auth::id(),
+        ]);
+
+        $mensagem = $formulario->aceitando_respostas
+            ? 'Formulário reaberto e voltou a aceitar respostas.'
+            : 'Formulário encerrado. Novas respostas não serão aceitas.';
+
+        return redirect()->route('formularios.index')->with('success', $mensagem);
+    }
+
     public function parametrizar(Formulario $formulario)
     {
         $passos = $formulario->passos()->with('perguntas.opcoes')->orderBy('ordem')->get();

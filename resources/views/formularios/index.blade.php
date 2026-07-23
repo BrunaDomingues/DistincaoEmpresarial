@@ -28,6 +28,7 @@
                         <tr>
                             <th class="text-gray-700 dark:text-gray-200 px-4 py-2 text-left">ID</th>
                             <th class="text-gray-700 dark:text-gray-200 px-4 py-2 text-left">Título</th>
+                            <th class="text-gray-700 dark:text-gray-200 px-4 py-2 text-left">Status</th>
                             <th class="text-gray-700 dark:text-gray-200 px-4 py-2 text-left">Data Início</th>
                             <th class="text-gray-700 dark:text-gray-200 px-4 py-2 text-left">Data Fim</th>
                             <th class="text-gray-700 dark:text-gray-200 px-4 py-2 text-left">Criado por</th>
@@ -37,7 +38,7 @@
                     <tbody>
                         @if ($formularios->isEmpty())
                             <tr>
-                                <td colspan="6" class="text-center text-gray-500 dark:text-gray-400 py-4">
+                                <td colspan="7" class="text-center text-gray-500 dark:text-gray-400 py-4">
                                     Nenhum formulário encontrado.
                                 </td>
                             </tr>
@@ -46,6 +47,17 @@
                         <tr class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                             <td class="px-4 py-2 text-gray-800 dark:text-gray-100">{{ $formulario->id }}</td>
                             <td class="px-4 py-2 text-gray-800 dark:text-gray-100">{{ $formulario->titulo }}</td>
+                            <td class="px-4 py-2">
+                                @if ($formulario->aceitando_respostas)
+                                    <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">
+                                        Aberto
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                                        Encerrado
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-4 py-2 text-gray-800 dark:text-gray-100">
                                 {{ $formulario->data_inicio ? $formulario->data_inicio->format('d/m/Y') : '-' }}
                             </td>
@@ -78,6 +90,18 @@
                                     class="text-indigo-600 p-2 rounded-full transition-transform transform hover:scale-110">
                                         <i class="bx bx-cog text-xl"></i>
                                     </a>
+
+                                    <!-- Encerrar / Reabrir -->
+                                    <form action="{{ route('formularios.toggle-aceitando-respostas', $formulario) }}" method="POST" class="inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit"
+                                                title="{{ $formulario->aceitando_respostas ? 'Encerrar formulário' : 'Reabrir formulário' }}"
+                                                onclick="return confirm('{{ $formulario->aceitando_respostas ? 'Encerrar este formulário? Ele deixará de aceitar novas respostas.' : 'Reabrir este formulário para voltar a aceitar respostas?' }}')"
+                                                class="p-2 rounded-full transition-transform transform hover:scale-110 {{ $formulario->aceitando_respostas ? 'text-amber-500 hover:text-amber-600' : 'text-emerald-500 hover:text-emerald-600' }}">
+                                            <i class="bx {{ $formulario->aceitando_respostas ? 'bx-lock-alt' : 'bx-lock-open-alt' }} text-xl"></i>
+                                        </button>
+                                    </form>
 
                                     <!-- Excluir -->
                                     <form action="{{ route('formularios.destroy', $formulario) }}" method="POST" class="inline">

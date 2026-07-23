@@ -88,6 +88,8 @@ Route::middleware(['auth'])->group(function () {
     
     Route::resource('formularios', FormularioController::class);
     Route::get('formularios/{formulario}/parametrizar', [FormularioController::class, 'parametrizar'])->name('formularios.parametrizar');
+    Route::patch('formularios/{formulario}/toggle-aceitando-respostas', [FormularioController::class, 'toggleAceitandoRespostas'])
+        ->name('formularios.toggle-aceitando-respostas');
 
 });
 

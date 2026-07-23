@@ -19,6 +19,7 @@ class Formulario extends Model
         'descricao',
         'data_inicio',
         'data_fim',
+        'aceitando_respostas',
         'created_by',
         'updated_by',
     ];
@@ -26,6 +27,7 @@ class Formulario extends Model
     protected $casts = [
         'data_inicio' => 'date',
         'data_fim' => 'date',
+        'aceitando_respostas' => 'boolean',
     ];
 
     public function scopeDisponivel(Builder $query, ?Carbon $data = null): Builder
@@ -33,6 +35,7 @@ class Formulario extends Model
         $hoje = ($data ?? now())->toDateString();
 
         return $query
+            ->where('aceitando_respostas', true)
             ->where(function (Builder $q) use ($hoje) {
                 $q->whereNull('data_inicio')
                     ->orWhereDate('data_inicio', '<=', $hoje);
@@ -45,6 +48,10 @@ class Formulario extends Model
 
     public function estaDisponivel(?Carbon $data = null): bool
     {
+        if (! $this->aceitando_respostas) {
+            return false;
+        }
+
         $hoje = ($data ?? now())->toDateString();
 
         if ($this->data_inicio && $hoje < $this->data_inicio->toDateString()) {
@@ -60,6 +67,10 @@ class Formulario extends Model
 
     public function mensagemIndisponibilidade(): string
     {
+        if (! $this->aceitando_respostas) {
+            return 'Este formulário foi encerrado e não está mais aceitando respostas.';
+        }
+
         $hoje = now()->toDateString();
 
         if ($this->data_inicio && $hoje < $this->data_inicio->toDateString()) {
