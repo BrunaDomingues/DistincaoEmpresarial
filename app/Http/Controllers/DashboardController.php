@@ -64,11 +64,11 @@ class DashboardController extends Controller
 
         // Últimos sete envios: usuário, título do formulário e data/hora (formatada em PHP para compatibilidade com SQLite)
         $enviosRecentes = DB::table('formulario_envios')
-            ->select('formularios.titulo', 'users.name as usuario', 'formulario_envios.created_at')
+            ->select('formulario_envios.id', 'formularios.titulo', 'users.name as usuario', 'formulario_envios.created_at')
             ->join('users', 'formulario_envios.usuario_id', '=', 'users.id')
             ->join('formularios', 'formulario_envios.formulario_id', '=', 'formularios.id')
             ->orderByDesc('formulario_envios.created_at')
-            ->limit(7)
+            ->limit(10)
             ->get()
             ->map(function ($envio) {
                 $envio->data_hora = \Carbon\Carbon::parse($envio->created_at)->format('d/m/Y H:i');

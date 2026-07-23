@@ -1,13 +1,21 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <h2 class="font-semibold text-xl text-gray-900 dark:text-white leading-tight">
-                Ranking consolidado — {{ $formulario->titulo }}
-            </h2>
-            <a href="{{ route('insight.ranking-empresas') }}"
-                class="text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                ← Outro questionário
-            </a>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="font-semibold text-xl text-gray-900 dark:text-white leading-tight">
+                    Ranking consolidado — {{ $formulario->titulo }}
+                </h2>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('insight.ranking-empresas.export', ['formulario_id' => $formulario->id]) }}"
+                    class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded transition">
+                    Exportar Excel
+                </a>
+                <a href="{{ route('insight.ranking-empresas') }}"
+                    class="text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    ← Outro questionário
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -66,6 +74,16 @@
                                                                 @foreach ($c['variants'] as $v)
                                                                     <span class="inline-block mr-1 rounded bg-gray-100 px-1 dark:bg-gray-700">{{ $v['label'] }} ({{ $v['total'] }})</span>
                                                                 @endforeach
+                                                            </div>
+                                                        @endif
+                                                        @if (!empty($c['requer_validacao']))
+                                                            <div class="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100">
+                                                                <span class="font-semibold">⚠ Validar agrupamento:</span>
+                                                                {{ $c['aviso_validacao'] }}
+                                                                <a href="{{ route('insight.empresa-aliases.index') }}"
+                                                                    class="mt-1 inline-block font-medium text-amber-900 underline dark:text-amber-200">
+                                                                    Gerenciar correspondências
+                                                                </a>
                                                             </div>
                                                         @endif
                                                     </td>

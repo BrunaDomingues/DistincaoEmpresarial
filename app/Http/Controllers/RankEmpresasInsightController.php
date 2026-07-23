@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\RankEmpresasInsightExport;
 use App\Models\Formulario;
-use App\Services\ClassificacaoRespostasService;
-use App\Support\EmpresaRespostaClusterService;
+use App\Services\RankEmpresasInsightService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RankEmpresasInsightController extends Controller
 {
@@ -16,7 +18,7 @@ class RankEmpresasInsightController extends Controller
         return view('relatorios.rank_empresas_inicio', compact('formularios'));
     }
 
-    public function analisar(Request $request, ClassificacaoRespostasService $classificacao)
+    public function analisar(Request $request, RankEmpresasInsightService $service)
     {
         $request->validate([
             'formulario_id' => 'required|integer|exists:formularios,id',
@@ -24,36 +26,26 @@ class RankEmpresasInsightController extends Controller
 
         $formularioId = (int) $request->input('formulario_id');
         $formulario = Formulario::findOrFail($formularioId);
-
-        $dadosBrutos = $classificacao->dadosPorFormulario($formularioId);
-        $clusterService = new EmpresaRespostaClusterService;
-
-        $dadosAgrupados = [];
-        foreach ($dadosBrutos as $grupoId => $grupoData) {
-            $perguntasFiltradas = [];
-            foreach ($grupoData['perguntas'] as $perguntaId => $perguntaData) {
-                if (! $perguntaData['pergunta']->usa_fatores_satisfacao) {
-                    continue;
-                }
-                $clusters = $clusterService->cluster($perguntaData['respostas']);
-                $perguntasFiltradas[$perguntaId] = [
-                    'pergunta' => $perguntaData['pergunta'],
-                    'clusters' => $clusters,
-                    'respostas_originais' => $perguntaData['respostas'],
-                ];
-            }
-            if (count($perguntasFiltradas) === 0) {
-                continue;
-            }
-            $dadosAgrupados[$grupoId] = [
-                'grupo' => $grupoData['grupo'],
-                'perguntas' => $perguntasFiltradas,
-            ];
-        }
+        $dadosAgrupados = $service->dadosAgrupadosPorFormulario($formularioId);
 
         return view('relatorios.rank_empresas_resultado', [
             'formulario' => $formulario,
             'dadosAgrupados' => $dadosAgrupados,
         ]);
+    }
+
+    public function exportar(Request $request)
+    {
+        $request->validate([
+            'formulario_id' => 'required|integer|exists:formularios,id',
+        ]);
+
+        $formulario = Formulario::findOrFail((int) $request->input('formulario_id'));
+        $nomeArquivo = 'ranking_empresas_'.Str::slug($formulario->titulo).'.xlsx';
+
+        return Excel::download(
+            new RankEmpresasInsightExport($formulario->id, $formulario->titulo),
+            $nomeArquivo
+        );
     }
 }

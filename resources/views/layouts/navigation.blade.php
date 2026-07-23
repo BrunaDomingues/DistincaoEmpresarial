@@ -105,20 +105,21 @@
                                         Respondentes por bairro
                                     </x-dropdown-link>
                                     <x-dropdown-link href="{{ route('relatorios.envios-usuarios') }}">
-                                        Envios por usuário e horário
+                                        Todos os envios
+                                    </x-dropdown-link>
+                                    <x-dropdown-link href="{{ route('insight.ranking-empresas') }}">
+                                        Ranking de empresas
                                     </x-dropdown-link>
                                 </x-slot>
                             </x-dropdown>
+                            <x-nav-link :href="route('insight.ranking-empresas')" :active="request()->routeIs('insight.ranking-empresas*')">
+                                Ranking empresas
+                            </x-nav-link>
                         @endif
                     @endauth
                     <x-nav-link :href="route('responder-formularios.index')" :active="request()->routeIs('responder-formularios.*')">
                         Responder Formulários
                     </x-nav-link>
-                    @if (Auth::id() === 1)
-                        <x-nav-link :href="route('insight.ranking-empresas')" :active="request()->routeIs('insight.*')">
-                            Ranking empresas
-                        </x-nav-link>
-                    @endif
                 </div>
             </div>
 
@@ -210,18 +211,16 @@
                         Relatório: Respondentes por bairro
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('relatorios.envios-usuarios')" :active="request()->routeIs('relatorios.envios-usuarios')">
-                        Relatório: Envios por usuário e horário
+                        Relatório: Todos os envios
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('insight.ranking-empresas')" :active="request()->routeIs('insight.ranking-empresas*')">
+                        Ranking de empresas
                     </x-responsive-nav-link>
                 @endif
             @endauth
             <x-responsive-nav-link :href="route('responder-formularios.index')" :active="request()->routeIs('responder-formularios.*')">
                 Responder Formulários
             </x-responsive-nav-link>
-            @if (Auth::id() === 1)
-                <x-responsive-nav-link :href="route('insight.ranking-empresas')" :active="request()->routeIs('insight.*')">
-                    Ranking empresas (insight)
-                </x-responsive-nav-link>
-            @endif
         </div>
 
         <!-- Menu do usuário (mobile) -->

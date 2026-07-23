@@ -25,7 +25,7 @@ class EmpresaRespostaClusterService
 
     /**
      * @param  Collection<int, object{resposta: ?string, total: int|string, fator_mais_utilizado: ?string}>  $linhas
-     * @return list<array{canonical: string, total: int, variants: list<array{label: string, total: int, fator: ?string}>, fator_exibido: ?string}>
+     * @return list<array{canonical: string, total: int, variants: list<array{label: string, total: int, fator: ?string}>, fator_exibido: ?string, requer_validacao: bool, aviso_validacao: ?string}>
      */
     public function cluster(Collection $linhas): array
     {
@@ -77,7 +77,90 @@ class EmpresaRespostaClusterService
 
         usort($clusters, fn ($a, $b) => $b['total'] <=> $a['total']);
 
+        return $this->enriquecerComAvisosValidacao($clusters);
+    }
+
+    /**
+     * @param  list<array{canonical: string, total: int, variants: list<array{label: string, total: int, fator: ?string}>, fator_exibido: ?string}>  $clusters
+     * @return list<array{canonical: string, total: int, variants: list<array{label: string, total: int, fator: ?string}>, fator_exibido: ?string, requer_validacao: bool, aviso_validacao: ?string}>
+     */
+    private function enriquecerComAvisosValidacao(array $clusters): array
+    {
+        foreach ($clusters as &$cluster) {
+            $aviso = $this->detectarAvisoValidacao($cluster);
+            $cluster['requer_validacao'] = $aviso !== null;
+            $cluster['aviso_validacao'] = $aviso;
+        }
+        unset($cluster);
+
         return $clusters;
+    }
+
+    /**
+     * @param  array{variants: list<array{label: string, total: int, fator: ?string}>}  $cluster
+     */
+    private function detectarAvisoValidacao(array $cluster): ?string
+    {
+        if (count($cluster['variants']) < 2) {
+            return null;
+        }
+
+        $primeirosNomes = [];
+        foreach ($cluster['variants'] as $variant) {
+            $tokens = $this->tokensSignificativos($this->normalize($variant['label']));
+            if (count($tokens) >= 2) {
+                $primeirosNomes[] = $tokens[0];
+            }
+        }
+
+        $primeirosNomes = array_values(array_unique($primeirosNomes));
+        if (count($primeirosNomes) < 2) {
+            return null;
+        }
+
+        for ($i = 0; $i < count($primeirosNomes); $i++) {
+            for ($j = $i + 1; $j < count($primeirosNomes); $j++) {
+                if (! $this->primeirosNomesCompativeis($primeirosNomes[$i], $primeirosNomes[$j])) {
+                    $exemplos = collect($cluster['variants'])
+                        ->pluck('label')
+                        ->unique()
+                        ->take(4)
+                        ->implode(', ');
+
+                    return "Possível agrupamento incorreto: há grafias com primeiros nomes diferentes ({$exemplos}). "
+                        .'Podem ser pessoas ou empresas distintas unidas só pelo sobrenome — valide antes de confiar no total.';
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function primeirosNomesCompativeis(string $a, string $b): bool
+    {
+        if ($a === $b) {
+            return true;
+        }
+
+        $minLen = min(strlen($a), strlen($b));
+        if ($minLen >= 4 && (str_contains($a, $b) || str_contains($b, $a))) {
+            return true;
+        }
+
+        similar_text($a, $b, $pct);
+        if ($pct >= 78.0) {
+            return true;
+        }
+
+        $max = max(strlen($a), strlen($b));
+        if ($max > 0) {
+            $lev = levenshtein($a, $b);
+            if ($lev !== -1 && ($lev / $max) <= 0.28) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function canonicalKey(string $label): string
@@ -202,20 +285,7 @@ class EmpresaRespostaClusterService
 
     private function normalize(string $s): string
     {
-        $s = trim(mb_strtolower($s, 'UTF-8'));
-        if (class_exists(\Normalizer::class)) {
-            $s = \Normalizer::normalize($s, \Normalizer::FORM_D);
-            $s = preg_replace('/\pM/u', '', $s) ?? $s;
-        }
-        $trans = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
-        if ($trans !== false) {
-            $s = $trans;
-        }
-        $s = mb_strtolower($s, 'UTF-8');
-        $s = preg_replace('/[^a-z0-9\s]/', ' ', $s) ?? $s;
-        $s = preg_replace('/\s+/', ' ', $s) ?? $s;
-
-        return trim($s);
+        return EmpresaNomeNormalizer::normalize($s);
     }
 
     /**

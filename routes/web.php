@@ -16,6 +16,8 @@ use App\Http\Controllers\RelatorioRespondentesPorBairroController;
 use App\Http\Controllers\RelatorioClassificacaoController;
 use App\Http\Controllers\RankEmpresasInsightController;
 use App\Http\Controllers\RelatorioEnviosUsuariosController;
+use App\Http\Controllers\FormularioEnvioController;
+use App\Http\Controllers\InsightEmpresaAliasController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -25,9 +27,15 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::middleware(['auth', 'verified', 'insight.user_id_one'])->prefix('insight')->name('insight.')->group(function () {
+Route::middleware(['auth', 'verified', 'admin'])->prefix('insight')->name('insight.')->group(function () {
     Route::get('/ranking-empresas', [RankEmpresasInsightController::class, 'index'])->name('ranking-empresas');
     Route::post('/ranking-empresas', [RankEmpresasInsightController::class, 'analisar'])->name('ranking-empresas.analisar');
+    Route::get('/ranking-empresas/export', [RankEmpresasInsightController::class, 'exportar'])->name('ranking-empresas.export');
+
+    Route::get('/empresa-aliases', [InsightEmpresaAliasController::class, 'index'])->name('empresa-aliases.index');
+    Route::post('/empresa-aliases', [InsightEmpresaAliasController::class, 'store'])->name('empresa-aliases.store');
+    Route::put('/empresa-aliases/{alias}', [InsightEmpresaAliasController::class, 'update'])->name('empresa-aliases.update');
+    Route::delete('/empresa-aliases/{alias}', [InsightEmpresaAliasController::class, 'destroy'])->name('empresa-aliases.destroy');
 });
 
 Route::prefix('relatorios')->middleware(['auth','admin'])->group(function () {
@@ -57,6 +65,9 @@ Route::prefix('relatorios')->middleware(['auth','admin'])->group(function () {
 
     Route::get('/envios-usuarios/export', [RelatorioEnviosUsuariosController::class, 'exportar'])
         ->name('relatorios.envios-usuarios.export');
+
+    Route::get('/envios/{envio}', [FormularioEnvioController::class, 'show'])
+        ->name('envios.show');
 
 });
 

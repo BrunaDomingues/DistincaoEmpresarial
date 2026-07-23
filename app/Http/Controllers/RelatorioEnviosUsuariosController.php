@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\RelatorioEnviosUsuariosExport;
 use App\Models\Formulario;
 use App\Models\FormularioEnvio;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -21,14 +22,17 @@ class RelatorioEnviosUsuariosController extends Controller
             ->when($request->filled('formulario_id'), function ($q) use ($request) {
                 $q->where('formulario_id', (int) $request->input('formulario_id'));
             })
+            ->when($request->filled('usuario_id'), function ($q) use ($request) {
+                $q->where('usuario_id', (int) $request->input('usuario_id'));
+            })
             ->when($request->filled('data'), function ($q) use ($request) {
                 $q->whereRaw('DATE(COALESCE(fim_resposta, created_at)) = ?', [$request->input('data')]);
             })
             ->orderByRaw('COALESCE(fim_resposta, created_at) DESC');
 
-        $envios = $query->get();
+        $enviosPaginados = $query->paginate(50)->withQueryString();
 
-        $enviosPorDia = $envios
+        $enviosPorDia = $enviosPaginados->getCollection()
             ->groupBy(function (FormularioEnvio $envio) use ($timezone) {
                 $momento = $envio->fim_resposta ?? $envio->created_at;
 
@@ -56,6 +60,17 @@ class RelatorioEnviosUsuariosController extends Controller
 
         $formularios = Formulario::orderBy('titulo')->get(['id', 'titulo']);
 
+        $usuarios = FormularioEnvio::query()
+            ->where('invalido', false)
+            ->whereNotNull('usuario_id')
+            ->distinct()
+            ->pluck('usuario_id');
+
+        $usuarios = User::query()
+            ->whereIn('id', $usuarios)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         $datasDisponiveis = FormularioEnvio::query()
             ->where('invalido', false)
             ->selectRaw('DATE(COALESCE(fim_resposta, created_at)) as data')
@@ -63,11 +78,13 @@ class RelatorioEnviosUsuariosController extends Controller
             ->orderByDesc('data')
             ->pluck('data');
 
-        $totalEnvios = $envios->count();
+        $totalEnvios = $enviosPaginados->total();
 
         return view('relatorios.envios_usuarios', compact(
             'enviosPorDia',
+            'enviosPaginados',
             'formularios',
+            'usuarios',
             'datasDisponiveis',
             'totalEnvios'
         ));

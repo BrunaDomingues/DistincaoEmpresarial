@@ -236,13 +236,34 @@
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 20px;
+            align-items: stretch;
         }
 
-        .chart-container, .recent-actions, .system-status {
+        .left-column,
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .chart-container,
+        .recent-actions,
+        .system-status {
             background: white;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .recent-actions,
+        .system-status {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0;
+        }
+
+        .chart-container {
             margin-bottom: 20px;
         }
 
@@ -256,6 +277,20 @@
         .section-title {
             font-size: 1.2rem;
             font-weight: 600;
+        }
+
+        .section-link {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .section-link:hover {
+            text-decoration: underline;
         }
 
         .chart-placeholder {
@@ -305,6 +340,21 @@
         .action-time {
             font-size: 0.8rem;
             color: var(--gray);
+        }
+
+        .action-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .action-link:hover {
+            text-decoration: underline;
         }
 
         .status-item {
@@ -366,13 +416,28 @@
             color: var(--primary);
         }
 
+        .chart-bairros-section {
+            grid-column: 1 / -1;
+            width: 100%;
+            max-width: 100%;
+        }
+
         .chart-scroll {
             max-width: 100%;
             overflow-x: auto;
+            width: 100%;
         }
 
-        .chart-scroll canvas {
-            max-width: 100%;
+        .chart-scroll--bairros {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        .chart-scroll--bairros canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
         }
 
         .mapa-envios-canvas {
@@ -525,11 +590,9 @@
                     <div class="recent-actions">
                         <div class="section-header">
                             <h3 class="section-title">Envios recentes</h3>
-                            {{--
-                            <button style="background: none; border: none; color: var(--primary); cursor: pointer;">
-                                View All
-                            </button>
-                            --}}
+                            <a href="{{ route('relatorios.envios-usuarios') }}" class="section-link">
+                                Ver todos
+                            </a>
                         </div>
                         <div class="actions-list">
                             @foreach ($enviosRecentes as $envio)
@@ -543,18 +606,12 @@
                                             concluiu uma aplicação no formulário {{$envio->titulo}}
                                         </div>
                                         <div class="action-time">{{ $envio->data_hora }}</div>
+                                        <a href="{{ route('envios.show', $envio->id) }}" class="action-link" title="Ver respostas deste envio">
+                                            <i class="fas fa-eye"></i> Ver respostas
+                                        </a>
                                     </div>
                                 </div>
                             @endforeach
-                        </div>
-                    </div>
-                    {{-- Bairros --}}
-                    <div class="chart-container">
-                        <div class="section-header">
-                            <h3 class="section-title">Distribuição por Bairros</h3>
-                        </div>
-                        <div class="chart-scroll">
-                            <canvas id="graficoBairros" height="300"></canvas>
                         </div>
                     </div>
                 </div>
@@ -605,6 +662,15 @@
                         </button>
                     </div>
                     --}}
+                </div>
+
+                <div class="chart-container chart-bairros-section">
+                    <div class="section-header">
+                        <h3 class="section-title">Distribuição por Bairros</h3>
+                    </div>
+                    <div class="chart-scroll chart-scroll--bairros">
+                        <canvas id="graficoBairros"></canvas>
+                    </div>
                 </div>
 
             </div>
@@ -723,7 +789,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data,
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: { display: false },
                         tooltip: {

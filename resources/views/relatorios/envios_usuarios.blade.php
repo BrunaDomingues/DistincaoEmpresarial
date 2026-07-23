@@ -1,8 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-900 dark:text-white leading-tight">
-            Envios por usuário e horário
-        </h2>
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="font-semibold text-xl text-gray-900 dark:text-white leading-tight">
+                    Todos os envios de formulários
+                </h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Lista completa com filtros — do mais recente ao mais antigo
+                </p>
+            </div>
+            <a href="{{ route('dashboard') }}"
+                class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400">
+                ← Voltar ao dashboard
+            </a>
+        </div>
     </x-slot>
 
     @include('relatorios.partials.estilos-mobile')
@@ -26,6 +37,20 @@
                         </select>
                     </div>
                     <div>
+                        <label for="usuario_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Usuário
+                        </label>
+                        <select name="usuario_id" id="usuario_id"
+                            class="relatorio-filtro-select relatorio-filtro-select--wide border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded">
+                            <option value="">Todos</option>
+                            @foreach ($usuarios as $usuario)
+                                <option value="{{ $usuario->id }}" @selected(request('usuario_id') == $usuario->id)>
+                                    {{ $usuario->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
                         <label for="data" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Dia
                         </label>
@@ -43,7 +68,7 @@
                         class="btn-relatorio bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded transition">
                         Filtrar
                     </button>
-                    @if (request()->hasAny(['formulario_id', 'data']))
+                    @if (request()->hasAny(['formulario_id', 'usuario_id', 'data']))
                         <a href="{{ route('relatorios.envios-usuarios') }}"
                             class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 py-2">
                             Limpar filtros
@@ -52,7 +77,10 @@
                 </form>
                 <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                     <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ $totalEnvios }} envio(s) — ordenados do mais recente para o mais antigo
+                        {{ $totalEnvios }} envio(s) no total
+                        @if ($enviosPaginados->hasPages())
+                            — página {{ $enviosPaginados->currentPage() }} de {{ $enviosPaginados->lastPage() }}
+                        @endif
                     </p>
                     <a href="{{ route('relatorios.envios-usuarios.export', request()->only(['formulario_id', 'data'])) }}"
                         class="btn-relatorio inline-block bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition shrink-0 text-center">
@@ -79,6 +107,7 @@
                                     <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-200 font-medium">Usuário</th>
                                     <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-200 font-medium">Formulário</th>
                                     <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-200 font-medium hidden sm:table-cell">E-mail</th>
+                                    <th class="px-4 py-2 text-center text-gray-700 dark:text-gray-200 font-medium">Respostas</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -97,6 +126,12 @@
                                         <td class="px-4 py-2 text-gray-600 dark:text-gray-400 hidden sm:table-cell">
                                             {{ $envio->usuario->email ?? '—' }}
                                         </td>
+                                        <td class="px-4 py-2 text-center">
+                                            <a href="{{ route('envios.show', $envio) }}"
+                                                class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
+                                                Ver respostas
+                                            </a>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -108,6 +143,12 @@
                     Nenhum envio encontrado com os filtros selecionados.
                 </div>
             @endforelse
+
+            @if ($enviosPaginados->hasPages())
+                <div class="mt-4">
+                    {{ $enviosPaginados->links() }}
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>
