@@ -71,5 +71,15 @@
         @if (Route::has('login'))
             <div class="h-14.5 hidden lg:block"></div>
         @endif
+
+        <footer class="w-full mt-auto pt-6 text-center text-sm text-[#706f6c] dark:text-[#A1A09A]">
+            Desenvolvido por
+            <a href="https://brunadomingues.com.br/"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="font-medium text-[#1b1b18] dark:text-[#EDEDEC] hover:underline underline-offset-2">
+                Bruna Domingues Leite
+            </a>
+        </footer>
     </body>
 </html>

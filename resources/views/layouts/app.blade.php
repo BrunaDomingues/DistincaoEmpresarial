@@ -22,7 +22,7 @@
                 document.documentElement.classList.add('dark');
             }
         </script>
-        <div class="min-h-screen bg-gray-100 dark:bg-gray-900 overflow-x-hidden">
+        <div class="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 overflow-x-hidden">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
@@ -35,9 +35,21 @@
             @endisset
 
             <!-- Page Content -->
-            <main>
+            <main class="flex-1">
                 {{ $slot }}
             </main>
+
+            <footer class="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <div class="max-w-85 mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Desenvolvido por
+                    <a href="https://brunadomingues.com.br/"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 underline-offset-2 hover:underline">
+                        Bruna Domingues Leite
+                    </a>
+                </div>
+            </footer>
         </div>
         <!-- SweetAlert2 -->
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
