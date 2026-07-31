@@ -27,6 +27,20 @@ class RankEmpresasInsightExport implements FromCollection, WithHeadings
             foreach ($grupoData['perguntas'] as $perguntaData) {
                 $perguntaTitulo = $perguntaData['pergunta']->pergunta ?? '—';
 
+                foreach ($perguntaData['opcoes_reconhecimento'] ?? [] as $opcao) {
+                    $linhas->push([
+                        'Formulário' => $this->formularioTitulo,
+                        'Grupo' => $grupoTitulo,
+                        'Pergunta' => $perguntaTitulo,
+                        'Tipo' => 'Opção sem nome',
+                        'Posição' => '',
+                        'Nome consolidado' => $opcao['canonical'] ?? '',
+                        'Quantidade' => $opcao['total'] ?? 0,
+                        'Fator' => $opcao['fator_exibido'] ?? '',
+                        'Grafias no banco' => '',
+                    ]);
+                }
+
                 foreach ($perguntaData['clusters'] as $i => $cluster) {
                     $grafias = collect($cluster['variants'] ?? [])
                         ->map(fn ($v) => ($v['label'] ?? '').' ('.($v['total'] ?? 0).')')
@@ -36,6 +50,7 @@ class RankEmpresasInsightExport implements FromCollection, WithHeadings
                         'Formulário' => $this->formularioTitulo,
                         'Grupo' => $grupoTitulo,
                         'Pergunta' => $perguntaTitulo,
+                        'Tipo' => 'Empresa',
                         'Posição' => $i + 1,
                         'Nome consolidado' => $cluster['canonical'] ?? '',
                         'Quantidade' => $cluster['total'] ?? 0,
@@ -55,6 +70,7 @@ class RankEmpresasInsightExport implements FromCollection, WithHeadings
             'Formulário',
             'Grupo',
             'Pergunta',
+            'Tipo',
             'Posição',
             'Nome consolidado',
             'Quantidade',

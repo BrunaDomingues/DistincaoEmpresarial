@@ -37,6 +37,7 @@
                         @foreach ($grupoData['perguntas'] as $perguntaData)
                             @php
                                 $clusters = $perguntaData['clusters'];
+                                $opcoesReconhecimento = $perguntaData['opcoes_reconhecimento'] ?? [];
                                 $lider = $clusters[0] ?? null;
                             @endphp
                             <div class="w-full md:w-1/2 space-y-3">
@@ -53,6 +54,37 @@
                                             </p>
                                         @endif
                                     </div>
+
+                                    @if (count($opcoesReconhecimento) > 0)
+                                        <div class="border-b dark:border-gray-700">
+                                            <div class="bg-slate-50 dark:bg-slate-900/40 px-3 py-2">
+                                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                                                    Opções sem nome de empresa
+                                                </p>
+                                            </div>
+                                            <table class="w-full text-sm">
+                                                <thead class="bg-gray-100 dark:bg-gray-700">
+                                                    <tr>
+                                                        <th class="p-2 text-left border-b dark:border-gray-600">Opção</th>
+                                                        <th class="p-2 text-center border-b dark:border-gray-600">Qtd</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach ($opcoesReconhecimento as $opcao)
+                                                        <tr class="dark:border-gray-700">
+                                                            <td class="border-b p-2 font-medium text-gray-900 dark:text-gray-100">
+                                                                {{ $opcao['canonical'] }}
+                                                            </td>
+                                                            <td class="border-b p-2 text-center font-medium">
+                                                                {{ $opcao['total'] }}
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @endif
+
                                     <table class="w-full text-sm">
                                         <thead class="bg-gray-100 dark:bg-gray-700">
                                             <tr>

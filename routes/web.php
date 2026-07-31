@@ -15,6 +15,7 @@ use App\Http\Controllers\RelatorioAplicadoresController;
 use App\Http\Controllers\RelatorioRespondentesPorBairroController;
 use App\Http\Controllers\RelatorioClassificacaoController;
 use App\Http\Controllers\RankEmpresasInsightController;
+use App\Http\Controllers\RankReconhecimentoPesquisadoresController;
 use App\Http\Controllers\RelatorioEnviosUsuariosController;
 use App\Http\Controllers\FormularioEnvioController;
 use App\Http\Controllers\InsightEmpresaAliasController;
@@ -31,6 +32,13 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('insight')->name('insig
     Route::get('/ranking-empresas', [RankEmpresasInsightController::class, 'index'])->name('ranking-empresas');
     Route::post('/ranking-empresas', [RankEmpresasInsightController::class, 'analisar'])->name('ranking-empresas.analisar');
     Route::get('/ranking-empresas/export', [RankEmpresasInsightController::class, 'exportar'])->name('ranking-empresas.export');
+
+    Route::get('/ranking-reconhecimento-pesquisadores', [RankReconhecimentoPesquisadoresController::class, 'index'])
+        ->name('ranking-reconhecimento-pesquisadores');
+    Route::post('/ranking-reconhecimento-pesquisadores', [RankReconhecimentoPesquisadoresController::class, 'analisar'])
+        ->name('ranking-reconhecimento-pesquisadores.analisar');
+    Route::get('/ranking-reconhecimento-pesquisadores/export', [RankReconhecimentoPesquisadoresController::class, 'exportar'])
+        ->name('ranking-reconhecimento-pesquisadores.export');
 
     Route::get('/empresa-aliases', [InsightEmpresaAliasController::class, 'index'])->name('empresa-aliases.index');
     Route::post('/empresa-aliases', [InsightEmpresaAliasController::class, 'store'])->name('empresa-aliases.store');

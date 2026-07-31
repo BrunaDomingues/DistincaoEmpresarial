@@ -81,7 +81,7 @@
                                 Usuários
                             </x-nav-link>
                             {{-- Dropdown de Relatórios --}}
-                            <x-dropdown align="left" width="48">
+                            <x-dropdown align="left" width="72">
                                 <x-slot name="trigger">
                                     <button type="button" class="nav-relatorios-btn focus:outline-none transition duration-150">
                                         Relatórios
@@ -107,14 +107,29 @@
                                     <x-dropdown-link href="{{ route('relatorios.envios-usuarios') }}">
                                         Todos os envios
                                     </x-dropdown-link>
-                                    <x-dropdown-link href="{{ route('insight.ranking-empresas') }}">
-                                        Ranking de empresas
-                                    </x-dropdown-link>
+
+                                    <div class="mx-[-1px] my-1 border-t border-gray-200 dark:border-gray-600"></div>
+
+                                    <div x-data="{ rankingsOpen: false }" @click.stop>
+                                        <button type="button"
+                                            @click="rankingsOpen = !rankingsOpen"
+                                            class="flex w-full items-center justify-between px-4 py-2 text-start text-sm font-medium leading-5 text-gray-700 transition hover:bg-gray-100 focus:outline-none dark:text-gray-300 dark:hover:bg-gray-800">
+                                            <span>Rankings</span>
+                                            <svg class="h-4 w-4 fill-current transition-transform" :class="{ 'rotate-180': rankingsOpen }" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                        <div x-show="rankingsOpen" x-cloak class="pb-1">
+                                            <x-dropdown-link href="{{ route('insight.ranking-empresas') }}" class="!pl-8">
+                                                Empresas
+                                            </x-dropdown-link>
+                                            <x-dropdown-link href="{{ route('insight.ranking-reconhecimento-pesquisadores') }}" class="!pl-8">
+                                                Não conheço / Não lembro
+                                            </x-dropdown-link>
+                                        </div>
+                                    </div>
                                 </x-slot>
                             </x-dropdown>
-                            <x-nav-link :href="route('insight.ranking-empresas')" :active="request()->routeIs('insight.ranking-empresas*')">
-                                Ranking empresas
-                            </x-nav-link>
                         @endif
                     @endauth
                     <x-nav-link :href="route('responder-formularios.index')" :active="request()->routeIs('responder-formularios.*')">
@@ -213,8 +228,15 @@
                     <x-responsive-nav-link :href="route('relatorios.envios-usuarios')" :active="request()->routeIs('relatorios.envios-usuarios')">
                         Relatório: Todos os envios
                     </x-responsive-nav-link>
+
+                    <div class="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        Rankings
+                    </div>
                     <x-responsive-nav-link :href="route('insight.ranking-empresas')" :active="request()->routeIs('insight.ranking-empresas*')">
-                        Ranking de empresas
+                        Empresas
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('insight.ranking-reconhecimento-pesquisadores')" :active="request()->routeIs('insight.ranking-reconhecimento-pesquisadores*')">
+                        Não conheço / Não lembro
                     </x-responsive-nav-link>
                 @endif
             @endauth
