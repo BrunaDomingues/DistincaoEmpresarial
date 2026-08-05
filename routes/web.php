@@ -19,6 +19,7 @@ use App\Http\Controllers\RankReconhecimentoPesquisadoresController;
 use App\Http\Controllers\RelatorioEnviosUsuariosController;
 use App\Http\Controllers\FormularioEnvioController;
 use App\Http\Controllers\InsightEmpresaAliasController;
+use App\Http\Controllers\RelatorioSegmentosPorBairroController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -52,6 +53,15 @@ Route::prefix('relatorios')->middleware(['auth','admin'])->group(function () {
     
     Route::get('/bairros/export', [RelatorioRespondentesPorBairroController::class, 'export'])
             ->name('relatorios.bairros.export');
+
+    Route::get('/segmentos-por-bairro', [RelatorioSegmentosPorBairroController::class, 'index'])
+        ->name('relatorios.segmentos-bairros');
+
+    Route::post('/segmentos-por-bairro', [RelatorioSegmentosPorBairroController::class, 'analisar'])
+        ->name('relatorios.segmentos-bairros.analisar');
+
+    Route::get('/segmentos-por-bairro/exportar', [RelatorioSegmentosPorBairroController::class, 'exportar'])
+        ->name('relatorios.segmentos-bairros.exportar');
 
     Route::get('/aplicadores', [RelatorioAplicadoresController::class, 'index'])
             ->name('relatorios.aplicadores');

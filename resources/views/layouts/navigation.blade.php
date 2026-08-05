@@ -104,6 +104,9 @@
                                     <x-dropdown-link href="{{ route('relatorios.bairros') }}">
                                         Respondentes por bairro
                                     </x-dropdown-link>
+                                    <x-dropdown-link href="{{ route('relatorios.segmentos-bairros') }}">
+                                        Resultados por setor e bairro
+                                    </x-dropdown-link>
                                     <x-dropdown-link href="{{ route('relatorios.envios-usuarios') }}">
                                         Todos os envios
                                     </x-dropdown-link>
@@ -224,6 +227,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('relatorios.bairros')" :active="request()->routeIs('relatorios.bairros')">
                         Relatório: Respondentes por bairro
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('relatorios.segmentos-bairros')" :active="request()->routeIs('relatorios.segmentos-bairros*')">
+                        Relatório: Resultados por setor e bairro
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('relatorios.envios-usuarios')" :active="request()->routeIs('relatorios.envios-usuarios')">
                         Relatório: Todos os envios
