@@ -704,9 +704,6 @@
             <div class="chart-container mapa-envios-container">
                 <div class="section-header">
                     <h3 class="section-title">Mapa por bairro e cidade</h3>
-                    @if (count($pontosMapaJson) > 0)
-                        <span class="mapa-envios-meta">Uma bola por bairro</span>
-                    @endif
                 </div>
                 @if (count($pontosMapaJson) === 0)
                     <p class="mapa-envios-meta" style="padding: 1rem 0;">Nenhum envio com bairro ou cidade informados ainda.</p>
