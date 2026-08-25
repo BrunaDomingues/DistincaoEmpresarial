@@ -430,18 +430,30 @@
 
         .chart-scroll--bairros {
             position: relative;
-            height: 320px;
+            height: 420px;
             width: 100%;
+            overflow-x: auto;
         }
 
         .chart-scroll--bairros canvas {
+            display: block;
+            height: 100% !important;
+        }
+
+        .chart-scroll--geo canvas {
             display: block;
             width: 100% !important;
             height: 100% !important;
         }
 
+        .chart-scroll--geo {
+            position: relative;
+            min-height: 320px;
+            width: 100%;
+        }
+
         .mapa-envios-canvas {
-            height: 400px;
+            height: 720px;
             width: 100%;
             border-radius: 8px;
             margin-top: 4px;
@@ -675,19 +687,31 @@
 
             </div>
 
+            <div class="chart-container chart-bairros-section">
+                <div class="section-header">
+                    <h3 class="section-title">Geolocalização dos pesquisadores</h3>
+                    <span class="mapa-envios-meta">Envios válidos por bairro e cidade informados</span>
+                </div>
+                @if (count($graficoGeoLabels) === 0)
+                    <p class="mapa-envios-meta">Nenhum envio com localização registrado ainda.</p>
+                @else
+                    <div class="chart-scroll chart-scroll--geo" id="grafico-geo-wrap">
+                        <canvas id="graficoGeoPesquisadores"></canvas>
+                    </div>
+                @endif
+            </div>
+
             <div class="chart-container mapa-envios-container">
                 <div class="section-header">
-                    <h3 class="section-title">Mapa de envios (GPS)</h3>
-                    @if (count($pontosMapaJson) > 0 && $totalEnviosComGeo > count($pontosMapaJson))
-                        <span class="mapa-envios-meta">Mostrando os {{ count($pontosMapaJson) }} mais recentes de {{ $totalEnviosComGeo }} com localização</span>
-                    @elseif (count($pontosMapaJson) > 0)
-                        <span class="mapa-envios-meta">{{ $totalEnviosComGeo }} envio(s) com localização</span>
+                    <h3 class="section-title">Mapa por bairro e cidade</h3>
+                    @if (count($pontosMapaJson) > 0)
+                        <span class="mapa-envios-meta">Uma bola por bairro</span>
                     @endif
                 </div>
                 @if (count($pontosMapaJson) === 0)
-                    <p class="mapa-envios-meta" style="padding: 1rem 0;">Nenhum envio com latitude e longitude registradas ainda.</p>
+                    <p class="mapa-envios-meta" style="padding: 1rem 0;">Nenhum envio com bairro ou cidade informados ainda.</p>
                 @else
-                    <div id="mapa-envios" class="mapa-envios-canvas" role="region" aria-label="Mapa de pontos de envio"></div>
+                    <div id="mapa-envios" class="mapa-envios-canvas" role="region" aria-label="Mapa de envios por bairro"></div>
                 @endif
             </div>
 
@@ -811,9 +835,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         x: {
                             ticks: {
-                                autoSkip: true,
-                                maxRotation: 45,
-                                minRotation: 0
+                                autoSkip: false,
+                                maxRotation: 90,
+                                minRotation: 45
                             }
                         }
                     }
@@ -821,11 +845,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 plugins: [ChartDataLabels]
             };
 
+            const labelsBairros = data.labels || [];
+            if (labelsBairros.length > 0) {
+                graficoEl.style.minWidth = Math.max(graficoEl.parentElement.clientWidth, labelsBairros.length * 42) + 'px';
+            }
+
             if (typeof ChartDataLabels !== 'undefined') {
                 new Chart(ctx, config);
             } else {
                 console.error('ChartDataLabels não foi carregado corretamente.');
             }
+        }
+
+        const geoEl = document.getElementById('graficoGeoPesquisadores');
+        const geoLabels = @json($graficoGeoLabels);
+        const geoDatasets = @json($graficoGeoDatasets);
+        if (geoEl && typeof Chart !== 'undefined' && Array.isArray(geoLabels) && geoLabels.length > 0) {
+            const wrap = document.getElementById('grafico-geo-wrap');
+            if (wrap) {
+                const extraLegenda = Math.ceil((geoDatasets.length || 0) / 3) * 22;
+                wrap.style.height = Math.max(360, geoLabels.length * 32 + extraLegenda) + 'px';
+            }
+
+            new Chart(geoEl.getContext('2d'), {
+                type: 'bar',
+                data: { labels: geoLabels, datasets: geoDatasets },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 11 },
+                                padding: 8
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `${context.dataset.label}: ${context.raw}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: { display: true, text: 'Envios' }
+                        },
+                        y: {
+                            stacked: true,
+                            title: { display: true, text: 'Pesquisador' }
+                        }
+                    }
+                }
+            });
         }
 
         const mapaEl = document.getElementById('mapa-envios');
@@ -840,9 +916,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const bounds = [];
             pontosMapa.forEach((p) => {
                 bounds.push([p.lat, p.lng]);
-                const popupHtml = '<div class="mapa-popup"><strong>' + escapeHtmlMapa(p.formulario) + '</strong>'
-                    + escapeHtmlMapa(p.data) + '<br>' + escapeHtmlMapa(p.endereco || '—') + '</div>';
-                L.marker([p.lat, p.lng]).addTo(mapa).bindPopup(popupHtml);
+                const popupHtml = '<div class="mapa-popup"><strong>' + escapeHtmlMapa(p.endereco || '—') + '</strong>'
+                    + escapeHtmlMapa((p.total || 0) + ' envio(s) respondidos nesta região') + '</div>';
+                L.circleMarker([p.lat, p.lng], {
+                    radius: 14,
+                    color: '#4361ee',
+                    weight: 2,
+                    fillColor: '#4361ee',
+                    fillOpacity: 0.92,
+                }).addTo(mapa).bindPopup(popupHtml);
             });
 
             if (bounds.length === 1) {

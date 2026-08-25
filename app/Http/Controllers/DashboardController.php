@@ -1,10 +1,9 @@
 <?php
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use App\Support\LocalidadeCoordenadas;
 
 class DashboardController extends Controller
 {
@@ -22,6 +21,8 @@ class DashboardController extends Controller
             $dadosPorBairro = [];
             $pontosMapaJson = [];
             $totalEnviosComGeo = 0;
+            $graficoGeoLabels = [];
+            $graficoGeoDatasets = [];
 
             return view('dashboard', compact(
                 'envios',
@@ -32,7 +33,9 @@ class DashboardController extends Controller
                 'enviosRecentes',
                 'dadosPorBairro',
                 'pontosMapaJson',
-                'totalEnviosComGeo'
+                'totalEnviosComGeo',
+                'graficoGeoLabels',
+                'graficoGeoDatasets'
             ));
         }
 
@@ -77,63 +80,50 @@ class DashboardController extends Controller
                 return $envio;
             });
 
-        // Dados agrupados por bairro (geolocalização do envio)
+        // Dados agrupados por bairro e cidade informados no envio
         $dadosPorBairro = DB::table('formulario_envios')
             ->where('invalido', false)
             ->whereNotNull('bairro')
             ->whereRaw("TRIM(bairro) <> ''")
-            ->select(DB::raw('TRIM(bairro) as bairro'), DB::raw('COUNT(id) as total'))
-            ->groupBy(DB::raw('TRIM(bairro)'))
+            ->select('bairro', 'cidade', DB::raw('COUNT(id) as total'))
+            ->groupBy('bairro', 'cidade')
             ->orderByDesc('total')
-            ->get();
+            ->get()
+            ->map(function ($linha) {
+                $bairro = trim((string) ($linha->bairro ?? ''));
+                $cidade = trim((string) ($linha->cidade ?? ''));
+                $cidade = $cidade !== '' ? $cidade : 'Cidade não informada';
+
+                return (object) [
+                    'bairro' => $bairro.' ('.$cidade.')',
+                    'total' => (int) $linha->total,
+                ];
+            })
+            ->groupBy(fn ($linha) => mb_strtolower($linha->bairro))
+            ->map(function ($grupo) {
+                $primeiro = $grupo->first();
+                $primeiro->total = $grupo->sum('total');
+
+                return $primeiro;
+            })
+            ->sortByDesc('total')
+            ->values();
 
         $totalEnviosComGeo = DB::table('formulario_envios')
             ->where('invalido', false)
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
+            ->where(function ($query) {
+                $query
+                    ->where(function ($q) {
+                        $q->whereNotNull('bairro')->whereRaw("TRIM(bairro) <> ''");
+                    })
+                    ->orWhere(function ($q) {
+                        $q->whereNotNull('cidade')->whereRaw("TRIM(cidade) <> ''");
+                    });
+            })
             ->count();
 
-        $limiteMapa = 800;
-        $selectMapa = [
-            'fe.latitude',
-            'fe.longitude',
-            'fe.rua',
-            'fe.bairro',
-            'fe.cidade',
-            'fe.estado',
-            'fe.created_at',
-            'formularios.titulo as formulario_titulo',
-        ];
-        if (Schema::hasColumn('formulario_envios', 'cep')) {
-            $selectMapa[] = 'fe.cep';
-        }
-
-        $pontosMapaColecao = DB::table('formulario_envios as fe')
-            ->join('formularios', 'fe.formulario_id', '=', 'formularios.id')
-            ->where('fe.invalido', false)
-            ->whereNotNull('fe.latitude')
-            ->whereNotNull('fe.longitude')
-            ->select($selectMapa)
-            ->orderByDesc('fe.created_at')
-            ->limit($limiteMapa)
-            ->get();
-
-        $pontosMapaJson = $pontosMapaColecao->map(function ($p) {
-            $partes = array_filter([
-                $p->rua ?? null,
-                $p->bairro ?? null,
-                $p->cidade ?? null,
-                property_exists($p, 'cep') && $p->cep ? 'CEP '.$p->cep : null,
-            ]);
-
-            return [
-                'lat' => round((float) $p->latitude, 7),
-                'lng' => round((float) $p->longitude, 7),
-                'formulario' => $p->formulario_titulo,
-                'data' => Carbon::parse($p->created_at)->timezone('America/Sao_Paulo')->format('d/m/Y H:i'),
-                'endereco' => implode(', ', $partes),
-            ];
-        })->values()->all();
+        $pontosMapaJson = $this->pontosMapaPorBairroCidade();
+        [$graficoGeoLabels, $graficoGeoDatasets] = $this->dadosGraficoGeoPesquisadores();
 
         return view('dashboard', compact(
             'envios',
@@ -144,8 +134,138 @@ class DashboardController extends Controller
             'enviosRecentes',
             'dadosPorBairro',
             'pontosMapaJson',
-            'totalEnviosComGeo'
+            'totalEnviosComGeo',
+            'graficoGeoLabels',
+            'graficoGeoDatasets'
         ));
+    }
+
+    /**
+     * @return array{0: list<string>, 1: list<array{label: string, data: list<int>, backgroundColor: string}>}
+     */
+    private function dadosGraficoGeoPesquisadores(): array
+    {
+        $linhas = DB::table('formulario_envios as fe')
+            ->join('users', 'users.id', '=', 'fe.usuario_id')
+            ->where('fe.invalido', false)
+            ->where(function ($query) {
+                $query
+                    ->where(function ($q) {
+                        $q->whereNotNull('fe.bairro')->whereRaw("TRIM(fe.bairro) <> ''");
+                    })
+                    ->orWhere(function ($q) {
+                        $q->whereNotNull('fe.cidade')->whereRaw("TRIM(fe.cidade) <> ''");
+                    });
+            })
+            ->select([
+                'users.name as pesquisador',
+                'fe.bairro',
+                'fe.cidade',
+                DB::raw('COUNT(fe.id) as total'),
+            ])
+            ->groupBy('users.id', 'users.name', 'fe.bairro', 'fe.cidade')
+            ->orderBy('users.name')
+            ->get()
+            ->map(function ($linha) {
+                $bairro = trim((string) ($linha->bairro ?? ''));
+                $cidade = trim((string) ($linha->cidade ?? ''));
+                $linha->local = ($bairro !== '' ? $bairro : 'Bairro não informado')
+                    .' ('.($cidade !== '' ? $cidade : 'Cidade não informada').')';
+                $linha->pesquisador = (string) $linha->pesquisador;
+
+                return $linha;
+            });
+
+        $pesquisadores = $linhas->pluck('pesquisador')->unique()->values();
+        $locais = $linhas
+            ->pluck('local')
+            ->unique()
+            ->sort(fn ($a, $b) => strcasecmp($a, $b))
+            ->values();
+
+        $totais = [];
+        foreach ($linhas as $linha) {
+            $totais[$linha->local][$linha->pesquisador] = ($totais[$linha->local][$linha->pesquisador] ?? 0) + (int) $linha->total;
+        }
+
+        $datasets = $locais->values()->map(function ($local, $indice) use ($pesquisadores, $totais, $locais) {
+            return [
+                'label' => $local,
+                'data' => $pesquisadores->map(fn ($pesquisador) => $totais[$local][$pesquisador] ?? 0)->values()->all(),
+                'backgroundColor' => $this->corParaIndice($indice, $locais->count()),
+            ];
+        })->values()->all();
+
+        return [$pesquisadores->all(), $datasets];
+    }
+
+    /**
+     * @return list<array{lat: float, lng: float, bairro: string, cidade: string, endereco: string, total: int}>
+     */
+    private function pontosMapaPorBairroCidade(): array
+    {
+        $linhas = DB::table('formulario_envios as fe')
+            ->where('fe.invalido', false)
+            ->where(function ($query) {
+                $query
+                    ->where(function ($q) {
+                        $q->whereNotNull('fe.bairro')->whereRaw("TRIM(fe.bairro) <> ''");
+                    })
+                    ->orWhere(function ($q) {
+                        $q->whereNotNull('fe.cidade')->whereRaw("TRIM(fe.cidade) <> ''");
+                    });
+            })
+            ->select([
+                'fe.bairro',
+                'fe.cidade',
+                DB::raw('COUNT(fe.id) as total'),
+            ])
+            ->groupBy('fe.bairro', 'fe.cidade')
+            ->get();
+
+        $agrupados = [];
+        foreach ($linhas as $linha) {
+            $bairro = trim((string) ($linha->bairro ?? ''));
+            $cidade = trim((string) ($linha->cidade ?? ''));
+            $chave = mb_strtolower($cidade).'|'.mb_strtolower($bairro);
+            $agrupados[$chave] ??= [
+                'bairro' => $bairro,
+                'cidade' => $cidade,
+                'total' => 0,
+            ];
+            $agrupados[$chave]['total'] += (int) $linha->total;
+        }
+
+        $pontos = [];
+        foreach ($agrupados as $local) {
+            $coordenada = LocalidadeCoordenadas::ponto($local['cidade'], $local['bairro']);
+            if ($coordenada === null) {
+                continue;
+            }
+
+            $partes = array_filter([
+                $local['bairro'] !== '' ? $local['bairro'] : null,
+                $local['cidade'] !== '' ? $local['cidade'] : null,
+            ]);
+
+            $pontos[] = [
+                'lat' => $coordenada['lat'],
+                'lng' => $coordenada['lng'],
+                'bairro' => $local['bairro'],
+                'cidade' => $local['cidade'],
+                'endereco' => implode(', ', $partes) ?: 'Local não informado',
+                'total' => $local['total'],
+            ];
+        }
+
+        return $pontos;
+    }
+
+    private function corParaIndice(int $indice, int $total): string
+    {
+        $hue = (int) round(($indice * 360) / max(1, $total));
+
+        return "hsl({$hue}, 62%, 48%)";
     }
 
     public function enviosPorUsuario()

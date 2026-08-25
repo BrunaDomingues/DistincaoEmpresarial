@@ -20,6 +20,7 @@ use App\Http\Controllers\RelatorioEnviosUsuariosController;
 use App\Http\Controllers\FormularioEnvioController;
 use App\Http\Controllers\InsightEmpresaAliasController;
 use App\Http\Controllers\RelatorioSegmentosPorBairroController;
+use App\Http\Controllers\RelatorioMotivosSegmentoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -62,6 +63,9 @@ Route::prefix('relatorios')->middleware(['auth','admin'])->group(function () {
 
     Route::get('/segmentos-por-bairro/exportar', [RelatorioSegmentosPorBairroController::class, 'exportar'])
         ->name('relatorios.segmentos-bairros.exportar');
+
+    Route::get('/motivos-segmento', [RelatorioMotivosSegmentoController::class, 'index'])
+        ->name('relatorios.motivos-segmento');
 
     Route::get('/aplicadores', [RelatorioAplicadoresController::class, 'index'])
             ->name('relatorios.aplicadores');
